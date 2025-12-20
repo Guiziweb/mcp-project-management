@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.3...v1.2.4) (2025-12-20)
+
+
+### Bug Fixes
+
+* run composer scripts with APP_ENV=prod in Docker build ([b1ad3d3](https://github.com/Guiziweb/redmine-mcp/commit/b1ad3d3fefd2e2dcff3b2382eb7d0c9909a053f0))
+
 ## [1.2.3](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.2...v1.2.3) (2025-12-20)
 
 

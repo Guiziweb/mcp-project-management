@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.0...v1.2.1) (2025-12-20)
+
+
+### Bug Fixes
+
+* add WWW-Authenticate header for OAuth discovery ([bfbb5cd](https://github.com/Guiziweb/redmine-mcp/commit/bfbb5cd52b4071925f00bd68f1de1248dbc2bcae))
+
 ## [1.2.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.1.0...v1.2.0) (2025-12-20)
 
 

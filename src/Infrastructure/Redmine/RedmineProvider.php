@@ -230,4 +230,19 @@ class RedmineProvider implements TimeTrackingProviderInterface
     {
         return $this->redmineService->downloadAttachment($attachmentId);
     }
+
+    public function updateTimeEntry(
+        int $timeEntryId,
+        ?float $hours = null,
+        ?string $comment = null,
+        ?int $activityId = null,
+        ?string $spentOn = null,
+    ): void {
+        $this->redmineService->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
+    }
+
+    public function deleteTimeEntry(int $timeEntryId): void
+    {
+        $this->redmineService->deleteTimeEntry($timeEntryId);
+    }
 }

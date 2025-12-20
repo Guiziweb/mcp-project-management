@@ -100,4 +100,26 @@ interface TimeTrackingProviderInterface
      * @return string Binary content of the attachment
      */
     public function downloadAttachment(int $attachmentId): string;
+
+    /**
+     * Update a time entry.
+     *
+     * @param int         $timeEntryId Time entry ID to update
+     * @param float|null  $hours       New hours (optional)
+     * @param string|null $comment     New comment (optional)
+     * @param int|null    $activityId  New activity ID (optional)
+     * @param string|null $spentOn     New date in YYYY-MM-DD format (optional)
+     */
+    public function updateTimeEntry(
+        int $timeEntryId,
+        ?float $hours = null,
+        ?string $comment = null,
+        ?int $activityId = null,
+        ?string $spentOn = null,
+    ): void;
+
+    /**
+     * Delete a time entry.
+     */
+    public function deleteTimeEntry(int $timeEntryId): void;
 }

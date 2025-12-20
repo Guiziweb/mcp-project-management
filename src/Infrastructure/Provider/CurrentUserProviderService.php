@@ -119,4 +119,19 @@ final readonly class CurrentUserProviderService implements TimeTrackingProviderI
     {
         return $this->getCurrentProvider()->downloadAttachment($attachmentId);
     }
+
+    public function updateTimeEntry(
+        int $timeEntryId,
+        ?float $hours = null,
+        ?string $comment = null,
+        ?int $activityId = null,
+        ?string $spentOn = null,
+    ): void {
+        $this->getCurrentProvider()->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
+    }
+
+    public function deleteTimeEntry(int $timeEntryId): void
+    {
+        $this->getCurrentProvider()->deleteTimeEntry($timeEntryId);
+    }
 }

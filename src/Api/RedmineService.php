@@ -201,4 +201,62 @@ class RedmineService
 
         return $api->download($attachmentId);
     }
+
+    /**
+     * Update a time entry.
+     *
+     * @param int         $timeEntryId Time entry ID to update
+     * @param float|null  $hours       New hours (optional)
+     * @param string|null $comment     New comment (optional)
+     * @param int|null    $activityId  New activity ID (optional)
+     * @param string|null $spentOn     New date in YYYY-MM-DD format (optional)
+     */
+    public function updateTimeEntry(
+        int $timeEntryId,
+        ?float $hours = null,
+        ?string $comment = null,
+        ?int $activityId = null,
+        ?string $spentOn = null,
+    ): void {
+        $data = [];
+
+        if (null !== $hours) {
+            $data['hours'] = $hours;
+        }
+        if (null !== $comment) {
+            $data['comments'] = $comment;
+        }
+        if (null !== $activityId) {
+            $data['activity_id'] = $activityId;
+        }
+        if (null !== $spentOn) {
+            $data['spent_on'] = $spentOn;
+        }
+
+        if (empty($data)) {
+            throw new \InvalidArgumentException('At least one field must be provided to update');
+        }
+
+        $client = $this->getClient();
+        $api = $client->getApi('time_entry');
+
+        $result = $api->update($timeEntryId, $data);
+
+        if (false === $result) {
+            throw new \RuntimeException('Failed to update time entry');
+        }
+    }
+
+    /**
+     * Delete a time entry.
+     *
+     * @return string Empty string on success
+     */
+    public function deleteTimeEntry(int $timeEntryId): string
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('time_entry');
+
+        return $api->remove($timeEntryId);
+    }
 }

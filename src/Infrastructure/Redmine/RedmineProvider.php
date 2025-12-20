@@ -99,7 +99,9 @@ class RedmineProvider implements TimeTrackingProviderInterface
 
     public function getIssue(int $issueId): Issue
     {
-        $data = $this->redmineService->getIssue($issueId);
+        $data = $this->redmineService->getIssue($issueId, [
+            'include' => 'journals,attachments',
+        ]);
 
         return $this->serializer->denormalize(
             $data,
@@ -199,5 +201,33 @@ class RedmineProvider implements TimeTrackingProviderInterface
             ),
             $entries
         );
+    }
+
+    /**
+     * Get attachment metadata.
+     *
+     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
+     */
+    public function getAttachment(int $attachmentId): array
+    {
+        $data = $this->redmineService->getAttachment($attachmentId);
+        $attachment = $data['attachment'] ?? $data;
+
+        return [
+            'id' => (int) ($attachment['id'] ?? 0),
+            'filename' => (string) ($attachment['filename'] ?? ''),
+            'filesize' => (int) ($attachment['filesize'] ?? 0),
+            'content_type' => (string) ($attachment['content_type'] ?? 'application/octet-stream'),
+            'description' => isset($attachment['description']) ? (string) $attachment['description'] : null,
+            'author' => isset($attachment['author']['name']) ? (string) $attachment['author']['name'] : null,
+        ];
+    }
+
+    /**
+     * Download attachment content.
+     */
+    public function downloadAttachment(int $attachmentId): string
+    {
+        return $this->redmineService->downloadAttachment($attachmentId);
     }
 }

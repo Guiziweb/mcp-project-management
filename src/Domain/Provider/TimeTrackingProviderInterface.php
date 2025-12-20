@@ -86,4 +86,18 @@ interface TimeTrackingProviderInterface
         \DateTimeInterface $to,
         ?int $userId = null,
     ): array;
+
+    /**
+     * Get attachment metadata.
+     *
+     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
+     */
+    public function getAttachment(int $attachmentId): array;
+
+    /**
+     * Download attachment content.
+     *
+     * @return string Binary content of the attachment
+     */
+    public function downloadAttachment(int $attachmentId): string;
 }

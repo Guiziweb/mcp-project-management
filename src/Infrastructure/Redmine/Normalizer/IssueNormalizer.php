@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine\Normalizer;
 
+use App\Domain\Model\Attachment;
 use App\Domain\Model\Issue;
+use App\Domain\Model\Journal;
 use App\Domain\Model\Project;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
@@ -32,6 +34,32 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             $context
         );
 
+        // Denormalize journals if present
+        $journals = [];
+        if (isset($issue['journals']) && is_array($issue['journals'])) {
+            foreach ($issue['journals'] as $journalData) {
+                $journals[] = $this->denormalizer->denormalize(
+                    $journalData,
+                    Journal::class,
+                    $format,
+                    $context
+                );
+            }
+        }
+
+        // Denormalize attachments if present
+        $attachments = [];
+        if (isset($issue['attachments']) && is_array($issue['attachments'])) {
+            foreach ($issue['attachments'] as $attachmentData) {
+                $attachments[] = $this->denormalizer->denormalize(
+                    $attachmentData,
+                    Attachment::class,
+                    $format,
+                    $context
+                );
+            }
+        }
+
         return new Issue(
             id: (int) ($issue['id'] ?? 0),
             title: (string) ($issue['subject'] ?? ''),
@@ -41,6 +69,8 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             assignee: isset($issue['assigned_to']['name']) ? (string) $issue['assigned_to']['name'] : null,
             tracker: isset($issue['tracker']['name']) ? (string) $issue['tracker']['name'] : null,
             priority: isset($issue['priority']['name']) ? (string) $issue['priority']['name'] : null,
+            journals: $journals,
+            attachments: $attachments,
         );
     }
 

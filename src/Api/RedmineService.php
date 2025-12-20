@@ -175,4 +175,30 @@ class RedmineService
 
         return $api->all($params);
     }
+
+    /**
+     * Get attachment details.
+     *
+     * @return array<string, mixed>
+     */
+    public function getAttachment(int $attachmentId): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('attachment');
+
+        return $api->show($attachmentId);
+    }
+
+    /**
+     * Download attachment content.
+     *
+     * @return string Binary content of the attachment
+     */
+    public function downloadAttachment(int $attachmentId): string
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('attachment');
+
+        return $api->download($attachmentId);
+    }
 }

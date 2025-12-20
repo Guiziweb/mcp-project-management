@@ -32,6 +32,25 @@ final class GetIssueDetailsTool
         try {
             $issue = $this->provider->getIssue($issue_id);
 
+            // Format journals (comments/changes)
+            $journals = array_map(fn ($journal) => [
+                'id' => $journal->id,
+                'notes' => $journal->notes,
+                'author' => $journal->author,
+                'created_on' => $journal->createdOn?->format('Y-m-d H:i:s'),
+            ], $issue->journals);
+
+            // Format attachments
+            $attachments = array_map(fn ($attachment) => [
+                'id' => $attachment->id,
+                'filename' => $attachment->filename,
+                'filesize' => $attachment->filesize,
+                'content_type' => $attachment->contentType,
+                'description' => $attachment->description,
+                'author' => $attachment->author,
+                'created_on' => $attachment->createdOn?->format('Y-m-d H:i:s'),
+            ], $issue->attachments);
+
             return [
                 'success' => true,
                 'issue' => [
@@ -46,6 +65,8 @@ final class GetIssueDetailsTool
                     'assignee' => $issue->assignee,
                     'tracker' => $issue->tracker,
                     'priority' => $issue->priority,
+                    'journals' => $journals,
+                    'attachments' => $attachments,
                 ],
             ];
         } catch (\Throwable $e) {

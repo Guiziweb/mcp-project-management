@@ -109,4 +109,14 @@ final readonly class CurrentUserProviderService implements TimeTrackingProviderI
 
         return $this->getCurrentProvider()->getTimeEntries($from, $to, $userId);
     }
+
+    public function getAttachment(int $attachmentId): array
+    {
+        return $this->getCurrentProvider()->getAttachment($attachmentId);
+    }
+
+    public function downloadAttachment(int $attachmentId): string
+    {
+        return $this->getCurrentProvider()->downloadAttachment($attachmentId);
+    }
 }

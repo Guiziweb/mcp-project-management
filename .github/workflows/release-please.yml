@@ -12,8 +12,55 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           release-type: php
           prerelease: true
+
+  deploy:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          APP_URL: ${{ secrets.APP_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          ALLOWED_EMAIL_DOMAINS: ${{ secrets.ALLOWED_EMAIL_DOMAINS }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: APP_SECRET,JWT_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY,ALLOWED_EMAIL_DOMAINS
+          script: |
+            cd /opt/redmine-mcp
+
+            # Pull latest code
+            git pull origin main
+
+            # Create .env from template with secrets
+            export APP_SECRET="$APP_SECRET"
+            export JWT_SECRET="$JWT_SECRET"
+            export APP_URL="$APP_URL"
+            export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
+            export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
+            export ENCRYPTION_KEY="$ENCRYPTION_KEY"
+            export ALLOWED_EMAIL_DOMAINS="$ALLOWED_EMAIL_DOMAINS"
+
+            envsubst < .env.template > .env
+
+            # Deploy with Docker
+            make deploy
+
+            # Show deployment status
+            echo "Deployment completed!"
+            docker ps | grep mcp-redmine

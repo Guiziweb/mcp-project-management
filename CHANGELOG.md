@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.0.0...v1.1.0) (2025-12-20)
+
+
+### Features
+
+* add attachments and journals support for issues ([3c27906](https://github.com/Guiziweb/redmine-mcp/commit/3c279062e299b3208c620b8239413470291dcde3))
+
+
+### Bug Fixes
+
+* add missing LICENSE file ([f12b727](https://github.com/Guiziweb/redmine-mcp/commit/f12b72712627214a4bc1b0b4e9e796dc7961d295))
+* use stable MCP SDK and add composer validate to CI ([1ff70f0](https://github.com/Guiziweb/redmine-mcp/commit/1ff70f0428842e4d077ce453fa47ab1573408d2d))
+
 ## 1.0.0 (2025-12-20)
 
 

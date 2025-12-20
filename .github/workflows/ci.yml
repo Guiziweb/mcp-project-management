@@ -33,6 +33,9 @@ jobs:
           key: ${{ runner.os }}-php-static-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-php-static-
 
+      - name: Validate composer.json
+        run: composer validate --strict
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-scripts
 

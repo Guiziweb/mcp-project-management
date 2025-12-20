@@ -30,8 +30,8 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interactio
 # Copy application files
 COPY . .
 
-# Run post-install scripts now that app files are present
-RUN composer run-script post-install-cmd --no-interaction
+# Run post-install scripts now that app files are present (in prod mode to skip dev bundles)
+RUN APP_ENV=prod composer run-script post-install-cmd --no-interaction
 
 # Copy nginx and supervisor configurations
 COPY docker/nginx/nginx.conf /etc/nginx/http.d/default.conf

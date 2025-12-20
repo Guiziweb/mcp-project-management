@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.1.0...v1.2.0) (2025-12-20)
+
+
+### Features
+
+* add multi-provider support (Redmine + Jira) ([fa32b50](https://github.com/Guiziweb/redmine-mcp/commit/fa32b507a8f44f72a998d8677df473b59fbc77ac))
+* add update and delete time entry tools ([0f3aae7](https://github.com/Guiziweb/redmine-mcp/commit/0f3aae7d05d4b302ad7babe57261818ae695e526))
+* redesign OAuth page with Tailwind dark mode ([2217990](https://github.com/Guiziweb/redmine-mcp/commit/22179901448f8740b19ed3fb7b581eecf36b1711))
+* replace JS with Symfony UX Live Components for provider form ([26bf82a](https://github.com/Guiziweb/redmine-mcp/commit/26bf82a582dcfa651940890cbf54368ddac9b2bd))
+
 ## [1.1.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.0.0...v1.1.0) (2025-12-20)
 
 

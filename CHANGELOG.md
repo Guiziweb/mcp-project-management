@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.1...v1.2.2) (2025-12-20)
+
+
+### Bug Fixes
+
+* add ALLOWED_EMAILS to deploy workflows and env template ([76a3edb](https://github.com/Guiziweb/redmine-mcp/commit/76a3edb8efa355f9e419917c984d56686561e386))
+* run composer post-install scripts after copying app files ([d92cf57](https://github.com/Guiziweb/redmine-mcp/commit/d92cf57437ab1e1890d46992ae2f02005f69baa6))
+
 ## [1.2.1](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.0...v1.2.1) (2025-12-20)
 
 

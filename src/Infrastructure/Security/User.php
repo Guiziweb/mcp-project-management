@@ -31,6 +31,8 @@ final readonly class User implements UserInterface
      */
     public function getUserIdentifier(): string
     {
+        assert('' !== $this->credential->userId, 'User ID cannot be empty');
+
         return $this->credential->userId;
     }
 

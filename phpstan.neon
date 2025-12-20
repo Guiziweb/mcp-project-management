@@ -16,7 +16,4 @@ parameters:
         # Symfony Authenticator interface requires nullable return types even when not used
         - '#Method App\\Infrastructure\\Security\\JwtAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
         - '#Method App\\Infrastructure\\Security\\JwtAuthenticator::onAuthenticationFailure\(\) never returns null so it can be removed from the return type#'
-
-        # userId is always non-empty (primary key from database)
-        - '#Method App\\Infrastructure\\Security\\User::getUserIdentifier\(\) should return non-empty-string but returns string#'
  

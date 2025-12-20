@@ -20,23 +20,20 @@
     "require": {
         "php": ">=8.2",
         "ext-ctype": "*",
-        "doctrine/dbal": "^3",
-        "doctrine/doctrine-bundle": "^2.18",
-        "doctrine/doctrine-migrations-bundle": "^3.5",
-        "doctrine/orm": "^3.5",
-        "firebase/php-jwt": "^6.0",
+        "ext-sodium": "*",
+        "firebase/php-jwt": "^6.11.1",
         "kbsali/redmine-api": "^2.8",
-        "laminas/laminas-httphandlerrunner": "^2.12",
-        "league/oauth2-google": "^4.0",
+        "laminas/laminas-httphandlerrunner": "^2.13",
+        "league/oauth2-google": "^4.1",
         "mcp/sdk": "dev-main",
-        "nyholm/psr7": "^1.8",
+        "nyholm/psr7": "^1.8.2",
         "nyholm/psr7-server": "^1.1",
         "symfony/console": "7.3.*",
         "symfony/dotenv": "7.3.*",
-        "symfony/flex": "^2",
+        "symfony/flex": "^2.10",
         "symfony/framework-bundle": "7.3.*",
         "symfony/http-client": "7.3.*",
-        "symfony/monolog-bundle": "^3.10",
+        "symfony/monolog-bundle": "^3.11.1",
         "symfony/psr-http-message-bridge": "7.3.*",
         "symfony/runtime": "7.3.*",
         "symfony/security-bundle": "7.3.*",
@@ -45,17 +42,15 @@
         "symfony/yaml": "7.3.*"
     },
     "require-dev": {
-        "cweagans/composer-patches": "*",
-        "friendsofphp/php-cs-fixer": "^3.0",
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^10.5"
+        "friendsofphp/php-cs-fixer": "^3.92.3",
+        "phpstan/phpstan": "^2.1.33",
+        "phpunit/phpunit": "^10.5.60"
     },
     "config": {
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true,
-            "cweagans/composer-patches": true
+            "symfony/runtime": true
         },
         "bump-after-update": true,
         "sort-packages": true
@@ -99,11 +94,6 @@
         "symfony": {
             "allow-contrib": false,
             "require": "7.3.*"
-        },
-        "patches": {
-            "mcp/sdk": {
-                "Change MCP protocol version to 2024-11-05 for compatibility": "patches/mcp-protocol-version.patch"
-            }
         }
     }
 }

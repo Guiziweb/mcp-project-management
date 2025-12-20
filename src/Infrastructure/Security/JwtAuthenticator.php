@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Security;
 
+use App\Domain\Model\UserCredential;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +17,9 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 
 /**
  * Authenticates users via JWT tokens in the Authorization header.
- * Validates the token and loads the user's Redmine credentials.
+ *
+ * Stateless architecture: credentials are extracted directly from the JWT,
+ * no database lookup required.
  */
 final class JwtAuthenticator extends AbstractAuthenticator
 {
@@ -27,7 +30,6 @@ final class JwtAuthenticator extends AbstractAuthenticator
 
     public function supports(Request $request): ?bool
     {
-        // Only authenticate if Authorization header is present
         return $request->headers->has('Authorization');
     }
 
@@ -42,24 +44,38 @@ final class JwtAuthenticator extends AbstractAuthenticator
         $token = substr($authHeader, 7);
 
         try {
-            $userId = $this->tokenValidator->validateAndGetUserId($token);
+            // Decode the full token payload
+            $payload = $this->tokenValidator->decodeToken($token);
+            $userId = (string) $payload->sub;
+
+            // Extract credentials from token
+            $credentials = $this->tokenValidator->extractCredentials($token);
+
+            // Create UserCredential from token data
+            $credential = new UserCredential(
+                userId: $userId,
+                redmineUrl: $credentials['url'],
+                redmineApiKey: $credentials['key'],
+                role: $payload->role ?? 'user',
+                isBot: $payload->is_bot ?? false,
+            );
+
+            // Create User directly with a custom loader (no database needed)
+            return new SelfValidatingPassport(
+                new UserBadge($userId, fn () => new User($credential))
+            );
         } catch (\RuntimeException $e) {
             throw new AuthenticationException($e->getMessage(), 0, $e);
         }
-
-        // UserBadge will load the user via the UserProvider
-        return new SelfValidatingPassport(new UserBadge($userId));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        // Let the request continue to the controller
         return null;
     }
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
-        // Use X-Forwarded-Proto header from ngrok/reverse proxy
         $scheme = $request->headers->get('X-Forwarded-Proto', $request->getScheme());
         $host = $request->getHost();
         $baseUrl = $scheme.'://'.$host;

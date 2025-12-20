@@ -1,9 +1,0 @@
---- a/src/Schema/JsonRpc/MessageInterface.php
-+++ b/src/Schema/JsonRpc/MessageInterface.php
-@@ -19,5 +19,5 @@
- interface MessageInterface extends \JsonSerializable
- {
-     public const JSONRPC_VERSION = '2.0';
--    public const PROTOCOL_VERSION = '2025-06-18';
-+    public const PROTOCOL_VERSION = '2024-11-05';
- }

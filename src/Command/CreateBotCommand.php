@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Domain\Model\UserCredential;
 use App\Infrastructure\Security\JwtTokenValidator;
-use App\Infrastructure\Security\UserCredentialRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,14 +12,19 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Creates a bot token with embedded Redmine credentials.
+ *
+ * Stateless architecture: the token contains all credentials,
+ * no database storage required.
+ */
 #[AsCommand(
     name: 'app:create-bot',
-    description: 'Create an admin bot user with long-lived JWT token for n8n integration'
+    description: 'Create an admin bot JWT token with embedded Redmine credentials for n8n integration'
 )]
 class CreateBotCommand extends Command
 {
     public function __construct(
-        private readonly UserCredentialRepository $credentialRepository,
         private readonly JwtTokenValidator $tokenValidator,
     ) {
         parent::__construct();
@@ -41,60 +44,34 @@ class CreateBotCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        // Get options
         $email = $input->getOption('email');
         $redmineUrl = $input->getOption('redmine-url');
         $redmineApiKey = $input->getOption('redmine-api-key');
         $jwtExpiry = $input->getOption('jwt-expiry');
 
-        // Validate required options
         if (!$email || !$redmineUrl || !$redmineApiKey) {
             $io->error('All options are required: --email, --redmine-url, --redmine-api-key');
 
             return Command::FAILURE;
         }
 
-        // Check if user already exists
-        if ($this->credentialRepository->exists($email)) {
-            $io->warning(sprintf('User "%s" already exists. Updating credentials and generating new token.', $email));
-
-            // Load existing credential
-            $credential = $this->credentialRepository->findByUserId($email);
-            $credential->redmineUrl = rtrim($redmineUrl, '/');
-            $credential->redmineApiKey = $redmineApiKey;
-            $credential->role = 'admin';
-            $credential->isBot = true;
-        } else {
-            // Create new bot user
-            $credential = new UserCredential(
-                userId: $email,
-                redmineUrl: rtrim($redmineUrl, '/'),
-                redmineApiKey: $redmineApiKey,
-                createdAt: new \DateTimeImmutable(),
-                role: 'admin',
-                isBot: true,
-            );
-
-            $io->info(sprintf('Creating new bot user: %s', $email));
-        }
-
-        // Save to database (credentials will be encrypted automatically)
-        $this->credentialRepository->save($credential);
-
-        $io->success('Bot user created/updated successfully!');
-
         // Calculate expiry in seconds
         $expiresIn = (new \DateTimeImmutable($jwtExpiry))->getTimestamp() - time();
 
-        // Generate long-lived JWT token
-        $token = $this->tokenValidator->createToken(
+        // Generate long-lived JWT token with embedded credentials
+        $token = $this->tokenValidator->createTokenWithCredentials(
             userId: $email,
+            redmineUrl: rtrim($redmineUrl, '/'),
+            redmineApiKey: $redmineApiKey,
             expiresIn: $expiresIn,
             extraClaims: [
                 'role' => 'admin',
                 'is_bot' => true,
+                'type' => 'access',
             ]
         );
+
+        $io->success('Bot token generated successfully!');
 
         $io->section('Bot Details');
         $io->table(
@@ -113,9 +90,10 @@ class CreateBotCommand extends Command
         $io->writeln($token);
 
         $io->note([
-            'This token grants admin access to query any user\'s data.',
+            'This token grants admin access with embedded Redmine credentials.',
             'Store it securely in your n8n environment variables.',
             'Use it in the Authorization header: Bearer <token>',
+            'No database storage required - credentials are in the token.',
         ]);
 
         return Command::SUCCESS;

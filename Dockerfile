@@ -5,14 +5,11 @@ RUN apk add --no-cache \
     git \
     unzip \
     libsodium-dev \
-    postgresql-dev \
     nginx \
     supervisor
 
 # Install PHP extensions
-RUN docker-php-ext-install \
-    sodium \
-    pdo_pgsql
+RUN docker-php-ext-install sodium
 
 # Configure PHP-FPM to listen on TCP instead of socket
 RUN sed -i 's/listen = \/run\/php\/php8.4-fpm.sock/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf || \
@@ -49,8 +46,7 @@ RUN composer dump-autoload --optimize && \
 # Expose port
 EXPOSE 8080
 
-# Start: clear cache, run migrations, then start supervisor (which manages nginx + php-fpm)
+# Start: clear cache, then start supervisor (which manages nginx + php-fpm)
 CMD php bin/console cache:clear --env=prod --no-debug && \
-    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration && \
     chown -R www-data:www-data /app/var && \
     /usr/bin/supervisord -c /etc/supervisord.conf

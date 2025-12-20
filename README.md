@@ -1,12 +1,12 @@
 # MCP Redmine Server
 
-A secure, multi-user MCP (Model Context Protocol) server that integrates Redmine with AI assistants like Claude Desktop and Claude Code. Features OAuth2 authentication, encrypted credentials, and natural language interaction with your Redmine instance.
+A secure, multi-user MCP (Model Context Protocol) server that integrates Redmine with AI assistants like Claude Desktop and Claude Code. Features OAuth2 authentication, encrypted credentials embedded in JWT tokens, and natural language interaction with your Redmine instance.
 
 ## Features
 
 - **OAuth2 Authentication**: Secure Google Sign-In for team authentication
 - **Multi-user Support**: Each user has their own Redmine credentials
-- **Encrypted Storage**: Credentials encrypted with Sodium (AES-256 equivalent)
+- **Stateless Architecture**: No database required - credentials encrypted in JWT tokens
 - **Email Whitelist**: Domain-based access control (configurable)
 - **HTTP Transport**: REST API with JWT tokens
 - **Smart Time Tracking**: Natural language time logging with automatic summaries
@@ -84,17 +84,17 @@ Deploy on Render.com (free tier) using the included `render.yaml` blueprint. See
 graph TB
     Client[Claude Client<br/>Desktop/Code]
 
-    subgraph Server["MCP Redmine Server"]
+    subgraph Server["MCP Redmine Server (Stateless)"]
         OAuth[OAuth2 Controller<br/>Google Sign-In + Email Whitelist]
-        DB[(DoctrineUserCredentialRepository<br/>Database + Sodium encryption<br/>SQLite dev / PostgreSQL prod)]
+        JWT[JWT with Encrypted Credentials<br/>Access Token 24h / Refresh Token 30d]
         Factory[UserRedmineProviderFactory<br/>Per-user Redmine clients]
     end
 
     Redmine[Redmine API<br/>Your Instance]
 
     Client -->|HTTP + JWT| OAuth
-    OAuth --> DB
-    DB --> Factory
+    OAuth --> JWT
+    JWT --> Factory
     Factory --> Redmine
 
     style Client fill:#e1f5ff
@@ -104,9 +104,14 @@ graph TB
 
 **Key Components:**
 - **OAuth2 Controller**: Handles Google authentication and email whitelist verification
-- **Credential Repository**: Stores encrypted Redmine credentials (URL + API key) per user
+- **JWT Tokens**: Access token (24h) + Refresh token (30 days) with encrypted Redmine credentials
 - **Provider Factory**: Creates per-user Redmine API clients on-demand
-- **Encryption**: Credentials encrypted at rest with Sodium (XSalsa20-Poly1305)
+- **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) inside JWT
+
+**Stateless Design:**
+- No database required
+- Credentials are encrypted and embedded in JWT tokens
+- Users re-authenticate via Google every 30 days (refresh token expiry)
 
 ## Development
 
@@ -145,11 +150,25 @@ php -S localhost:8000 -t public/
 - `APP_URL`: Your server URL (ngrok for dev, custom domain for prod)
 - `GOOGLE_CLIENT_ID`: From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET`: From Google Cloud Console
-- `ENCRYPTION_KEY`: Base64-encoded 32-byte Sodium key
+- `ENCRYPTION_KEY`: Base64-encoded 32-byte Sodium key (for encrypting credentials in JWT)
 - `JWT_SECRET`: Random string for JWT signing
 
 **Optional:**
 - `APP_ENV`: `dev` or `prod` (default: `dev`)
+- `ALLOWED_EMAIL_DOMAINS`: Comma-separated list of allowed email domains
+- `ALLOWED_EMAILS`: Comma-separated list of specific allowed emails
+
+### Bot Tokens (for n8n / automation)
+
+Create a long-lived bot token with embedded credentials:
+
+```bash
+php bin/console app:create-bot \
+  --email=bot@example.com \
+  --redmine-url=https://redmine.example.com \
+  --redmine-api-key=your-api-key \
+  --jwt-expiry="+1 year"
+```
 
 ### Testing
 
@@ -211,13 +230,15 @@ Both options can be combined. If neither is set, no users will be able to access
 ### "Email not authorized"
 Your email is not in the whitelist. Contact your administrator.
 
-### "No credentials found for user"
-First-time users need to authenticate via OAuth and provide Redmine credentials.
-
 ### OAuth redirect fails
 - Verify `APP_URL` matches your actual server URL
 - Check Google Console redirect URIs match exactly
 - Ensure OAuth2 credentials are correct in environment
+
+### "Token expired"
+- Access tokens expire after 24 hours
+- Refresh tokens expire after 30 days
+- Re-authenticate via Google to get new tokens
 
 ### "Service unavailable" in production
 - Check server logs

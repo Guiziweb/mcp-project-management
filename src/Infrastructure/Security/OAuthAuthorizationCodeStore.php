@@ -22,7 +22,7 @@ final class OAuthAuthorizationCodeStore
     /**
      * Store an authorization code with associated data.
      *
-     * @param array{user_id: string, client_id: string, redirect_uri: string} $data
+     * @param array{user_id: string, client_id: string, redirect_uri: string, redmine_url: string, redmine_api_key: string} $data
      */
     public function store(string $code, array $data): void
     {
@@ -35,7 +35,7 @@ final class OAuthAuthorizationCodeStore
     /**
      * Retrieve and delete (one-time use) an authorization code.
      *
-     * @return array{user_id: string, client_id: string, redirect_uri: string}|null
+     * @return array{user_id: string, client_id: string, redirect_uri: string, redmine_url: string, redmine_api_key: string}|null
      */
     public function consumeOnce(string $code): ?array
     {

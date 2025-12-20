@@ -10,6 +10,7 @@ use Mcp\Server\Session\FileSessionStore;
 use Mcp\Server\Transport\StreamableHttpTransport;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -25,7 +26,7 @@ final class McpController extends AbstractController
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly \Psr\Container\ContainerInterface $serviceContainer,
+        private readonly ContainerInterface $serviceContainer,
         #[Autowire(param: 'kernel.project_dir')]
         private readonly string $projectDir,
     ) {
@@ -58,17 +59,11 @@ final class McpController extends AbstractController
             ->setSession(new FileSessionStore($this->projectDir.'/var/mcp-sessions'))
             ->build();
 
-        // Create HTTP transport
-        $transport = new StreamableHttpTransport($psrRequest, $psr17Factory, $psr17Factory, $this->logger);
+        // Create HTTP transport (corsHeaders as 4th param, logger as 5th)
+        $transport = new StreamableHttpTransport($psrRequest, $psr17Factory, $psr17Factory, [], $this->logger);
 
-        // Connect and handle request
-        $server->connect($transport);
-        $psrResponse = $transport->listen();
-
-        // Convert PSR-7 response to Symfony response
-        if (!$psrResponse instanceof \Psr\Http\Message\ResponseInterface) {
-            throw new \RuntimeException('Expected PSR-7 ResponseInterface from transport');
-        }
+        // Run server and get response
+        $psrResponse = $server->run($transport);
 
         return new Response(
             (string) $psrResponse->getBody(),

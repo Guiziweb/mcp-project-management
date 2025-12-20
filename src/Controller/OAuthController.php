@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Domain\Model\UserCredential;
 use App\Infrastructure\Security\GoogleAuthService;
 use App\Infrastructure\Security\JwtTokenValidator;
 use App\Infrastructure\Security\OAuthAuthorizationCodeStore;
-use App\Infrastructure\Security\UserCredentialRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,12 +15,13 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * OAuth 2.1 Authorization Server for MCP Redmine.
- * Allows users to register their Redmine credentials and get access tokens.
+ *
+ * Stateless architecture: credentials are embedded in JWT tokens.
+ * No database storage required.
  */
 final class OAuthController extends AbstractController
 {
     public function __construct(
-        private readonly UserCredentialRepository $credentialRepository,
         private readonly JwtTokenValidator $tokenValidator,
         private readonly OAuthAuthorizationCodeStore $codeStore,
         private readonly GoogleAuthService $googleAuth,
@@ -36,10 +35,7 @@ final class OAuthController extends AbstractController
     #[Route('/.well-known/oauth-protected-resource', name: 'oauth_metadata', methods: ['GET'])]
     public function metadata(Request $request): JsonResponse
     {
-        // Use X-Forwarded headers from proxy, or full scheme+host+port from request
-        $baseUrl = $request->headers->get('X-Forwarded-Proto')
-            ? $request->headers->get('X-Forwarded-Proto').'://'.$request->getHost()
-            : $request->getSchemeAndHttpHost();
+        $baseUrl = $this->getBaseUrl($request);
 
         return new JsonResponse([
             'resource' => $baseUrl.'/mcp',
@@ -56,10 +52,7 @@ final class OAuthController extends AbstractController
     #[Route('/.well-known/oauth-authorization-server', name: 'oauth_authorization_server_metadata', methods: ['GET'])]
     public function authorizationServerMetadata(Request $request): JsonResponse
     {
-        // Use X-Forwarded headers from proxy, or full scheme+host+port from request
-        $baseUrl = $request->headers->get('X-Forwarded-Proto')
-            ? $request->headers->get('X-Forwarded-Proto').'://'.$request->getHost()
-            : $request->getSchemeAndHttpHost();
+        $baseUrl = $this->getBaseUrl($request);
 
         return new JsonResponse([
             'issuer' => $baseUrl,
@@ -67,7 +60,7 @@ final class OAuthController extends AbstractController
             'token_endpoint' => $baseUrl.'/oauth/token',
             'registration_endpoint' => $baseUrl.'/oauth/register',
             'response_types_supported' => ['code'],
-            'grant_types_supported' => ['authorization_code'],
+            'grant_types_supported' => ['authorization_code', 'refresh_token'],
             'token_endpoint_auth_methods_supported' => ['none', 'client_secret_post'],
             'code_challenge_methods_supported' => ['plain', 'S256'],
         ]);
@@ -80,27 +73,19 @@ final class OAuthController extends AbstractController
     #[Route('/oauth/register', name: 'oauth_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
-        // Parse JSON body
         $data = json_decode($request->getContent(), true);
 
-        // Generate client credentials
         $clientId = 'mcp-'.bin2hex(random_bytes(16));
         $clientSecret = bin2hex(random_bytes(32));
 
-        // Use X-Forwarded headers from proxy, or full scheme+host+port from request
-        $baseUrl = $request->headers->get('X-Forwarded-Proto')
-            ? $request->headers->get('X-Forwarded-Proto').'://'.$request->getHost()
-            : $request->getSchemeAndHttpHost();
-
-        // Return client registration response (RFC 7591)
         return new JsonResponse([
             'client_id' => $clientId,
             'client_secret' => $clientSecret,
             'client_id_issued_at' => time(),
-            'client_secret_expires_at' => 0, // Never expires
+            'client_secret_expires_at' => 0,
             'redirect_uris' => $data['redirect_uris'] ?? [],
             'token_endpoint_auth_method' => 'none',
-            'grant_types' => ['authorization_code'],
+            'grant_types' => ['authorization_code', 'refresh_token'],
             'response_types' => ['code'],
         ], 201);
     }
@@ -116,24 +101,18 @@ final class OAuthController extends AbstractController
         $redirectUri = $request->query->get('redirect_uri');
         $state = $request->query->get('state');
 
-        // Validate required parameters
         if (!$clientId || !$redirectUri) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Missing client_id or redirect_uri'], 400);
         }
 
-        // Store OAuth params in session to retrieve after Google callback
         $session = $request->getSession();
         $session->set('oauth_client_id', $clientId);
         $session->set('oauth_redirect_uri', $redirectUri);
         $session->set('oauth_state', $state);
 
-        // Get Google authorization URL
         $googleAuth = $this->googleAuth->getAuthorizationUrl();
-
-        // Store Google state in session for CSRF protection
         $session->set('google_oauth_state', $googleAuth['state']);
 
-        // Redirect to Google
         return $this->redirect($googleAuth['url']);
     }
 
@@ -157,10 +136,8 @@ final class OAuthController extends AbstractController
             }
 
             try {
-                // Exchange code for user info
                 $googleUser = $this->googleAuth->handleCallback($code, (string) $state, $expectedState);
 
-                // Validate user email is authorized
                 if (!$this->isEmailAuthorized($googleUser['email'])) {
                     return new JsonResponse([
                         'error' => 'access_denied',
@@ -171,17 +148,10 @@ final class OAuthController extends AbstractController
                     ], 403);
                 }
 
-                // Store Google user info in session
                 $session->set('google_user_email', $googleUser['email']);
                 $session->set('google_user_name', $googleUser['name']);
 
-                // Check if user already has credentials
-                if ($this->credentialRepository->exists($googleUser['email'])) {
-                    // User already registered, complete authorization
-                    return $this->completeAuthorization($googleUser['email'], $session);
-                }
-
-                // Show Redmine credentials form
+                // Always show form to enter/update Redmine credentials
                 return $this->render('oauth/authorize.html.twig', [
                     'google_user_name' => $googleUser['name'],
                     'google_user_email' => $googleUser['email'],
@@ -211,33 +181,33 @@ final class OAuthController extends AbstractController
             ]);
         }
 
-        // Store credentials with email as userId
-        $credential = new UserCredential(
-            userId: $userEmail,
-            redmineUrl: rtrim($redmineUrl, '/'),
-            redmineApiKey: $redmineApiKey,
-            createdAt: new \DateTimeImmutable(),
-        );
-        $this->credentialRepository->save($credential);
+        // Store credentials in session for authorization code exchange
+        $session->set('redmine_url', rtrim($redmineUrl, '/'));
+        $session->set('redmine_api_key', $redmineApiKey);
 
-        return $this->completeAuthorization($userEmail, $session);
+        return $this->completeAuthorization($session);
     }
 
     /**
      * Complete OAuth authorization by generating auth code and redirecting to client.
      */
-    private function completeAuthorization(string $userId, \Symfony\Component\HttpFoundation\Session\SessionInterface $session): Response
+    private function completeAuthorization(\Symfony\Component\HttpFoundation\Session\SessionInterface $session): Response
     {
         $clientId = $session->get('oauth_client_id');
         $redirectUri = $session->get('oauth_redirect_uri');
         $state = $session->get('oauth_state');
+        $userEmail = $session->get('google_user_email');
+        $redmineUrl = $session->get('redmine_url');
+        $redmineApiKey = $session->get('redmine_api_key');
 
-        // Generate and store authorization code
+        // Generate and store authorization code with credentials
         $authCode = bin2hex(random_bytes(32));
         $this->codeStore->store($authCode, [
-            'user_id' => $userId,
+            'user_id' => $userEmail,
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
+            'redmine_url' => $redmineUrl,
+            'redmine_api_key' => $redmineApiKey,
         ]);
 
         // Clear session
@@ -247,6 +217,8 @@ final class OAuthController extends AbstractController
         $session->remove('google_oauth_state');
         $session->remove('google_user_email');
         $session->remove('google_user_name');
+        $session->remove('redmine_url');
+        $session->remove('redmine_api_key');
 
         // Redirect back to client with authorization code
         $redirectUrl = $redirectUri.'?code='.$authCode;
@@ -259,69 +231,121 @@ final class OAuthController extends AbstractController
 
     /**
      * OAuth token endpoint.
-     * Exchanges authorization code for JWT access token.
+     * Exchanges authorization code for JWT access token + refresh token.
      */
     #[Route('/oauth/token', name: 'oauth_token', methods: ['POST'])]
     public function token(Request $request): JsonResponse
     {
         $grantType = $request->request->get('grant_type');
+
+        if ('authorization_code' === $grantType) {
+            return $this->handleAuthorizationCodeGrant($request);
+        }
+
+        if ('refresh_token' === $grantType) {
+            return $this->handleRefreshTokenGrant($request);
+        }
+
+        return new JsonResponse(['error' => 'unsupported_grant_type'], 400);
+    }
+
+    /**
+     * Handle authorization_code grant type.
+     */
+    private function handleAuthorizationCodeGrant(Request $request): JsonResponse
+    {
         $code = $request->request->get('code');
         $redirectUri = $request->request->get('redirect_uri');
-
-        // Validate grant type
-        if ('authorization_code' !== $grantType) {
-            return new JsonResponse(['error' => 'unsupported_grant_type'], 400);
-        }
 
         if (!is_string($code)) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Missing code parameter'], 400);
         }
 
-        // Retrieve and consume authorization code (one-time use, auto-expires)
         $authData = $this->codeStore->consumeOnce($code);
 
         if (null === $authData) {
             return new JsonResponse(['error' => 'invalid_grant', 'error_description' => 'Invalid or expired authorization code'], 400);
         }
 
-        // Validate redirect URI matches
         if ($authData['redirect_uri'] !== $redirectUri) {
             return new JsonResponse(['error' => 'invalid_grant', 'error_description' => 'Redirect URI mismatch'], 400);
         }
 
-        // Get user credential to include role in JWT
-        $credential = $this->credentialRepository->findByUserId($authData['user_id']);
-        if (null === $credential) {
-            return new JsonResponse(['error' => 'invalid_grant', 'error_description' => 'User not found'], 400);
-        }
-
-        // Generate JWT access token with role claim
-        $accessToken = $this->tokenValidator->createToken(
+        // Generate tokens with embedded credentials
+        $accessToken = $this->tokenValidator->createAccessToken(
             userId: $authData['user_id'],
-            expiresIn: 86400, // 24 hours
-            extraClaims: [
-                'role' => $credential->role,
-                'is_bot' => $credential->isBot,
-            ]
+            redmineUrl: $authData['redmine_url'],
+            redmineApiKey: $authData['redmine_api_key'],
+        );
+
+        $refreshToken = $this->tokenValidator->createRefreshToken(
+            userId: $authData['user_id'],
+            redmineUrl: $authData['redmine_url'],
+            redmineApiKey: $authData['redmine_api_key'],
         );
 
         return new JsonResponse([
             'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
             'token_type' => 'Bearer',
-            'expires_in' => 86400,
+            'expires_in' => 86400, // 24 hours
         ]);
     }
 
     /**
+     * Handle refresh_token grant type.
+     */
+    private function handleRefreshTokenGrant(Request $request): JsonResponse
+    {
+        $refreshToken = $request->request->get('refresh_token');
+
+        if (!is_string($refreshToken)) {
+            return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Missing refresh_token parameter'], 400);
+        }
+
+        try {
+            // Validate refresh token
+            if (!$this->tokenValidator->isRefreshToken($refreshToken)) {
+                return new JsonResponse(['error' => 'invalid_grant', 'error_description' => 'Token is not a refresh token'], 400);
+            }
+
+            // Extract user info and credentials from refresh token
+            $payload = $this->tokenValidator->decodeToken($refreshToken);
+            $credentials = $this->tokenValidator->extractCredentials($refreshToken);
+
+            // Generate new tokens
+            $newAccessToken = $this->tokenValidator->createAccessToken(
+                userId: (string) $payload->sub,
+                redmineUrl: $credentials['url'],
+                redmineApiKey: $credentials['key'],
+                role: $payload->role ?? 'user',
+                isBot: $payload->is_bot ?? false,
+            );
+
+            $newRefreshToken = $this->tokenValidator->createRefreshToken(
+                userId: (string) $payload->sub,
+                redmineUrl: $credentials['url'],
+                redmineApiKey: $credentials['key'],
+                role: $payload->role ?? 'user',
+                isBot: $payload->is_bot ?? false,
+            );
+
+            return new JsonResponse([
+                'access_token' => $newAccessToken,
+                'refresh_token' => $newRefreshToken,
+                'token_type' => 'Bearer',
+                'expires_in' => 86400,
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonResponse(['error' => 'invalid_grant', 'error_description' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * Check if an email is authorized to access this application.
-     *
-     * Authorized emails are configured via environment variables:
-     * - ALLOWED_EMAIL_DOMAINS: Comma-separated list of allowed domains (e.g., "company.com,example.org")
-     * - ALLOWED_EMAILS: Comma-separated list of specific allowed emails (e.g., "alice@example.com,bob@example.com")
      */
     private function isEmailAuthorized(string $email): bool
     {
-        // Check allowed domains
         $allowedDomains = $_ENV['ALLOWED_EMAIL_DOMAINS'] ?? '';
         if ('' !== $allowedDomains) {
             $domains = array_map('trim', explode(',', $allowedDomains));
@@ -332,7 +356,6 @@ final class OAuthController extends AbstractController
             }
         }
 
-        // Check whitelisted emails
         $allowedEmails = $_ENV['ALLOWED_EMAILS'] ?? '';
         if ('' !== $allowedEmails) {
             $emails = array_map('trim', explode(',', $allowedEmails));
@@ -342,5 +365,15 @@ final class OAuthController extends AbstractController
         }
 
         return false;
+    }
+
+    /**
+     * Get base URL from request, respecting proxy headers.
+     */
+    private function getBaseUrl(Request $request): string
+    {
+        return $request->headers->get('X-Forwarded-Proto')
+            ? $request->headers->get('X-Forwarded-Proto').'://'.$request->getHost()
+            : $request->getSchemeAndHttpHost();
     }
 }

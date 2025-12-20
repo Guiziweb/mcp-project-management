@@ -25,17 +25,11 @@ services:
     App\Domain\Provider\TimeTrackingProviderInterface:
         alias: App\Infrastructure\Provider\CurrentUserProviderService
 
-    # User credential repository - Database storage (SQLite local, PostgreSQL prod)
-    App\Infrastructure\Security\UserCredentialRepository:
-        class: App\Infrastructure\Security\DoctrineUserCredentialRepository
-        arguments:
-            $em: '@doctrine.orm.entity_manager'
-            $encryption: '@App\Infrastructure\Security\EncryptionService'
-
-    # JWT token validator
+    # JWT token validator (with encryption for embedded credentials)
     App\Infrastructure\Security\JwtTokenValidator:
         arguments:
             $jwtSecret: '%env(JWT_SECRET)%'
+            $encryption: '@App\Infrastructure\Security\EncryptionService'
 
     # Google OAuth2 authentication service
     App\Infrastructure\Security\GoogleAuthService:

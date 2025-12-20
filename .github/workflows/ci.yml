@@ -39,17 +39,8 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-scripts
 
-      - name: Check code formatting
-        run: make cs-check
-
-      - name: Run PHPStan
-        run: make phpstan
-
-      - name: Lint Symfony container
-        run: php bin/console lint:container
-
-      - name: Lint Twig templates
-        run: php bin/console lint:twig templates/
+      - name: Run static analysis (cs-check + phpstan + lints)
+        run: make static-analysis
 
   tests:
     name: Tests

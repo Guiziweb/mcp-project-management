@@ -1,7 +1,7 @@
 # Makefile pour redmine-mcp
 # Usage: make [target]
 
-.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy
+.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy lint-container lint-twig lint
 
 # Default target
 .DEFAULT_GOAL := help
@@ -27,8 +27,17 @@ test-coverage: ## Tests avec couverture de code
 phpstan: ## Analyse statique PHPStan
 	vendor/bin/phpstan analyse src
 
-static-analysis: ## Vérification formatage + PHPStan
-	$(MAKE) cs-check phpstan
+lint-container: ## Vérifier la configuration du container Symfony
+	php bin/console lint:container
+
+lint-twig: ## Vérifier les templates Twig
+	php bin/console lint:twig templates/
+
+lint: ## Lancer tous les lints (container + twig)
+	$(MAKE) lint-container lint-twig
+
+static-analysis: ## Vérification formatage + PHPStan + lints
+	$(MAKE) cs-check phpstan lint
 
 cs-fix: ## Corriger le formatage du code
 	vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php

@@ -1,10 +1,15 @@
 <?php
 
-namespace App\Api;
+declare(strict_types=1);
+
+namespace App\Infrastructure\Redmine;
 
 use Psr\Log\LoggerInterface;
 use Redmine\Client\NativeCurlClient;
 
+/**
+ * Service wrapper for Redmine API.
+ */
 class RedmineService
 {
     public function __construct(
@@ -22,9 +27,6 @@ class RedmineService
         );
     }
 
-    /**
-     * Récupère les tickets avec des paramètres de filtrage.
-     */
     /**
      * @param array<string, mixed> $params
      *
@@ -48,7 +50,6 @@ class RedmineService
     public function getIssue(int $issueId, array $params = []): array
     {
         $client = $this->getClient();
-
         $api = $client->getApi('issue');
 
         return $api->show($issueId, $params);
@@ -56,8 +57,7 @@ class RedmineService
 
     /**
      * Get current authenticated user account.
-     */
-    /**
+     *
      * @return array<string, mixed>
      */
     public function getMyAccount(): array
@@ -75,8 +75,7 @@ class RedmineService
 
     /**
      * Get projects where the current user is a member.
-     */
-    /**
+     *
      * @return array<string, mixed>
      */
     public function getMyProjects(): array
@@ -89,8 +88,7 @@ class RedmineService
 
     /**
      * Get time entry activities.
-     */
-    /**
+     *
      * @return array<string, mixed>
      */
     public function getTimeEntryActivities(): array
@@ -104,11 +102,11 @@ class RedmineService
     /**
      * Log time entry for an issue.
      *
-     * @param int         $issueId Issue ID
-     * @param float       $hours   Hours to log
-     * @param string      $comment Comment/description
-     *                             c     * @param int         $activityId Activity type ID
-     * @param string|null $spentOn Date in YYYY-MM-DD format (defaults to today)
+     * @param int         $issueId    Issue ID
+     * @param float       $hours      Hours to log
+     * @param string      $comment    Comment/description
+     * @param int         $activityId Activity type ID
+     * @param string|null $spentOn    Date in YYYY-MM-DD format (defaults to today)
      *
      * @return array<string, mixed>
      */
@@ -118,7 +116,7 @@ class RedmineService
             'issue_id' => $issueId,
             'hours' => $hours,
             'comments' => $comment,
-            'spent_on' => $spentOn ?? date('Y-m-d'), // Default to today
+            'spent_on' => $spentOn ?? date('Y-m-d'),
             'activity_id' => $activityId,
         ];
 
@@ -135,9 +133,7 @@ class RedmineService
                 'value' => $result instanceof \SimpleXMLElement ? $result->asXML() : $result,
             ]);
 
-            // Check if result is an error response
             if ($result instanceof \SimpleXMLElement) {
-                // Check for <errors> tag
                 if (isset($result->error) || isset($result->errors)) {
                     $errors = [];
                     foreach ($result->error ?? $result->errors->error ?? [] as $error) {
@@ -149,7 +145,6 @@ class RedmineService
                 return ['success' => true];
             }
 
-            // Empty string means success (201 Created with no body)
             if ('' === $result) {
                 return ['success' => true];
             }

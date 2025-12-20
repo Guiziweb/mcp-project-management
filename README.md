@@ -1,11 +1,12 @@
-# MCP Redmine Server
+# MCP Project Tools Server
 
-A secure, multi-user MCP (Model Context Protocol) server that integrates Redmine with AI assistants like Claude Desktop and Claude Code. Features OAuth2 authentication, encrypted credentials embedded in JWT tokens, and natural language interaction with your Redmine instance.
+A secure, multi-user MCP (Model Context Protocol) server that integrates project management tools (Redmine, Jira) with AI assistants like Claude Desktop and Claude Code. Features OAuth2 authentication, encrypted credentials embedded in JWT tokens, and natural language interaction with your projects, issues, and time tracking.
 
 ## Features
 
+- **Multi-Provider Support**: Connect to Redmine or Jira Cloud
 - **OAuth2 Authentication**: Secure Google Sign-In for team authentication
-- **Multi-user Support**: Each user has their own Redmine credentials
+- **Multi-user Support**: Each user has their own provider credentials
 - **Stateless Architecture**: No database required - credentials encrypted in JWT tokens
 - **Email Whitelist**: Domain-based access control (configurable)
 - **HTTP Transport**: REST API with JWT tokens
@@ -40,8 +41,9 @@ Create `.mcp.json` in your project or `~/.claude/.mcp.json`:
 
 1. Run `/mcp` in Claude Code
 2. First use will redirect you to Google Sign-In
-3. After authentication, provide your Redmine URL and API key
-4. Done! You can now interact with Redmine
+3. After authentication, choose your provider (Redmine or Jira)
+4. Provide your instance URL and API key (+ email for Jira)
+5. Done! You can now interact with your projects
 
 ### For Administrators (Deployment)
 
@@ -104,7 +106,7 @@ The repository includes a GitHub Actions workflow for automatic deployment to a 
           │ HTTP + JWT
           ▼
 ┌─────────────────────────────────────────┐
-│     MCP Redmine Server (Stateless)      │
+│   MCP Project Tools Server (Stateless)  │
 │                                         │
 │  ┌─────────────────────────────────┐    │
 │  │  OAuth2 Controller              │    │
@@ -117,20 +119,22 @@ The repository includes a GitHub Actions workflow for automatic deployment to a 
 │  └─────────────┬───────────────────┘    │
 │                │                        │
 │  ┌─────────────▼───────────────────┐    │
-│  │  Per-user Redmine Client        │    │
+│  │  ProviderFactory                │    │
+│  │  (Redmine / Jira)               │    │
 │  └─────────────┬───────────────────┘    │
 └────────────────┼────────────────────────┘
                  │
-                 ▼
-┌─────────────────────┐
-│    Redmine API      │
-│   Your Instance     │
-└─────────────────────┘
+        ┌────────┴────────┐
+        ▼                 ▼
+┌───────────────┐ ┌───────────────┐
+│  Redmine API  │ │   Jira API    │
+└───────────────┘ └───────────────┘
 ```
 
 **Key Components:**
 - **OAuth2 Controller**: Handles Google authentication and email whitelist verification
-- **JWT Tokens**: Access token (24h) + Refresh token (30 days) with encrypted Redmine credentials
+- **JWT Tokens**: Access token (24h) + Refresh token (30 days) with encrypted provider credentials
+- **ProviderFactory**: Creates the appropriate provider (Redmine or Jira) based on user credentials
 - **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) inside JWT
 
 **Stateless Design:**
@@ -155,18 +159,17 @@ git clone https://github.com/guiziweb/mcp-redmine.git
 cd mcp-redmine
 
 # Install dependencies
-make dev
+composer install
 
 # Configure environment
-cp .env.example .env.local
+cp .env.template .env.local
 # Edit .env.local with your settings
 
 # Generate encryption key
 php -r "echo base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES)) . PHP_EOL;"
 
-# Start development server (with ngrok for OAuth callback)
-ngrok http 8000
-php -S localhost:8000 -t public/
+# Start development server
+symfony server:start --port=8080
 ```
 
 ### Makefile Commands
@@ -199,10 +202,19 @@ make cs-fix       # Fix code style
 Create a long-lived bot token with embedded credentials:
 
 ```bash
+# For Redmine
 docker exec mcp-redmine-app php bin/console app:create-bot \
   bot-name \
   https://redmine.example.com \
   your-redmine-api-key
+
+# For Jira
+docker exec mcp-redmine-app php bin/console app:create-bot \
+  bot-name \
+  https://your-instance.atlassian.net \
+  your-jira-api-token \
+  --provider=jira \
+  --provider-email=your-email@company.com
 ```
 
 ### Testing
@@ -288,3 +300,4 @@ MIT
 - [Model Context Protocol](https://github.com/anthropics/mcp)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 - [Redmine API](https://www.redmine.org/projects/redmine/wiki/Rest_api)
+- [Jira Cloud REST API](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)

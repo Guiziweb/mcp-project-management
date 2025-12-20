@@ -11,7 +11,8 @@ use Firebase\JWT\Key;
  * Validates JWT tokens and extracts user information.
  * Used by MCP server to authenticate requests from Claude Desktop.
  *
- * Tokens contain encrypted Redmine credentials (stateless architecture).
+ * Tokens contain encrypted provider credentials (stateless architecture).
+ * Supports multiple providers: Redmine, Jira, etc.
  */
 final class JwtTokenValidator
 {
@@ -52,9 +53,9 @@ final class JwtTokenValidator
     }
 
     /**
-     * Extract Redmine credentials from a JWT token.
+     * Extract provider credentials from a JWT token.
      *
-     * @return array{url: string, key: string}
+     * @return array{provider: string, url: string, key: string, email: string|null}
      *
      * @throws \RuntimeException if token is invalid or missing credentials
      */
@@ -62,20 +63,22 @@ final class JwtTokenValidator
     {
         $payload = $this->decodeToken($token);
 
-        if (!isset($payload->redmine)) {
-            throw new \RuntimeException('Token missing "redmine" claim (credentials)');
+        if (!isset($payload->credentials)) {
+            throw new \RuntimeException('Token missing credentials claim');
         }
 
-        $decrypted = $this->encryption->decrypt((string) $payload->redmine);
+        $decrypted = $this->encryption->decrypt((string) $payload->credentials);
         $credentials = json_decode($decrypted, true);
 
-        if (!is_array($credentials) || !isset($credentials['url'], $credentials['key'])) {
+        if (!is_array($credentials) || !isset($credentials['provider'], $credentials['url'], $credentials['key'])) {
             throw new \RuntimeException('Invalid credentials format in token');
         }
 
         return [
+            'provider' => $credentials['provider'],
             'url' => $credentials['url'],
             'key' => $credentials['key'],
+            'email' => $credentials['email'] ?? null,
         ];
     }
 
@@ -99,44 +102,41 @@ final class JwtTokenValidator
     }
 
     /**
-     * Create a JWT token with embedded Redmine credentials.
+     * Create a JWT token with embedded provider credentials.
      *
+     * @param array{provider: string, url: string, key: string, email?: string} $credentials
      * @param array<string, mixed> $extraClaims
      */
     public function createTokenWithCredentials(
         string $userId,
-        string $redmineUrl,
-        string $redmineApiKey,
+        array $credentials,
         int $expiresIn = 86400,
         array $extraClaims = [],
     ): string {
         // Encrypt credentials as JSON blob
-        $credentials = json_encode([
-            'url' => $redmineUrl,
-            'key' => $redmineApiKey,
-        ], JSON_THROW_ON_ERROR);
-
-        $encryptedCredentials = $this->encryption->encrypt($credentials);
+        $encryptedCredentials = $this->encryption->encrypt(
+            json_encode($credentials, JSON_THROW_ON_ERROR)
+        );
 
         return $this->createToken($userId, $expiresIn, array_merge($extraClaims, [
-            'redmine' => $encryptedCredentials,
+            'credentials' => $encryptedCredentials,
         ]));
     }
 
     /**
      * Create an access token (short-lived, 24h).
+     *
+     * @param array{provider: string, url: string, key: string, email?: string} $credentials
      */
     public function createAccessToken(
         string $userId,
-        string $redmineUrl,
-        string $redmineApiKey,
+        array $credentials,
         string $role = 'user',
         bool $isBot = false,
     ): string {
         return $this->createTokenWithCredentials(
             $userId,
-            $redmineUrl,
-            $redmineApiKey,
+            $credentials,
             86400, // 24 hours
             [
                 'role' => $role,
@@ -148,18 +148,18 @@ final class JwtTokenValidator
 
     /**
      * Create a refresh token (long-lived, 30 days).
+     *
+     * @param array{provider: string, url: string, key: string, email?: string} $credentials
      */
     public function createRefreshToken(
         string $userId,
-        string $redmineUrl,
-        string $redmineApiKey,
+        array $credentials,
         string $role = 'user',
         bool $isBot = false,
     ): string {
         return $this->createTokenWithCredentials(
             $userId,
-            $redmineUrl,
-            $redmineApiKey,
+            $credentials,
             30 * 24 * 3600, // 30 days
             [
                 'role' => $role,

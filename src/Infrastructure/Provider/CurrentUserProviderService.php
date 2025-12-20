@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Infrastructure\Provider;
 
 use App\Domain\Provider\TimeTrackingProviderInterface;
-use App\Infrastructure\Redmine\UserRedmineProviderFactory;
 use App\Infrastructure\Security\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -17,13 +16,13 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  * based on the current authenticated user from Symfony Security.
  *
  * This allows MCP Tools to be registered once with dependency injection,
- * while still serving different users with their own Redmine credentials.
+ * while still serving different users with their own credentials (Redmine, Jira, etc.).
  */
 final readonly class CurrentUserProviderService implements TimeTrackingProviderInterface
 {
     public function __construct(
         private Security $security,
-        private UserRedmineProviderFactory $providerFactory,
+        private ProviderFactory $providerFactory,
     ) {
     }
 

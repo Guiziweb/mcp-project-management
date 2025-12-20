@@ -54,8 +54,10 @@ final class JwtAuthenticator extends AbstractAuthenticator
             // Create UserCredential from token data
             $credential = new UserCredential(
                 userId: $userId,
-                redmineUrl: $credentials['url'],
-                redmineApiKey: $credentials['key'],
+                provider: $credentials['provider'],
+                url: $credentials['url'],
+                apiKey: $credentials['key'],
+                email: $credentials['email'] ?? null,
                 role: $payload->role ?? 'user',
                 isBot: $payload->is_bot ?? false,
             );

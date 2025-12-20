@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authorize MCP Redmine Access</title>
+    <title>Connect Your Time Tracker</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -31,11 +31,7 @@
             font-size: 14px;
             line-height: 1.5;
         }
-        .error {
-            background: #f8e8e8;
-            color: #c33;
-            padding: 15px;
-            border-radius: 4px;
+        .form-group {
             margin-bottom: 20px;
         }
         label {
@@ -44,7 +40,9 @@
             font-weight: 500;
             color: #555;
         }
-        input[type="text"] {
+        input[type="text"],
+        input[type="email"],
+        input[type="url"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -52,14 +50,23 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        input[type="text"]:focus {
+        input:focus {
             outline: none;
             border-color: #4a9eff;
         }
-        .form-group {
-            margin-bottom: 20px;
+        .help-text {
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
         }
-        button {
+        .error-list {
+            color: #c33;
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 0;
+            list-style: none;
+        }
+        button[type="submit"] {
             width: 100%;
             padding: 12px;
             background: #4a9eff;
@@ -70,55 +77,151 @@
             font-weight: 500;
             cursor: pointer;
         }
-        button:hover {
+        button[type="submit"]:hover {
             background: #3a8eef;
         }
-        .help-text {
-            font-size: 12px;
-            color: #777;
-            margin-top: 5px;
+        .provider-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .provider-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .provider-option:hover {
+            border-color: #4a9eff;
+        }
+        .provider-option.selected {
+            border-color: #4a9eff;
+            background: #f0f7ff;
+        }
+        .provider-option input[type="radio"] {
+            display: none;
+        }
+        .provider-option .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .provider-option .name {
+            font-weight: 500;
+            color: #333;
+        }
+        .jira-fields {
+            display: none;
+        }
+        .jira-fields.visible {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Connect Your Redmine</h1>
+        <h1>Connect Your Time Tracker</h1>
 
         <div class="info">
             {% if google_user_name is defined %}
                 <p><strong>Signed in as:</strong> {{ google_user_name }} ({{ google_user_email }})</p>
             {% endif %}
-            <p><strong>Claude Desktop</strong> is requesting access to your Redmine instance to help you track time and manage issues.</p>
+            <p><strong>Claude Desktop</strong> is requesting access to your time tracking tool.</p>
         </div>
 
-        {% if error is defined %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
+        {{ form_start(form) }}
 
-        <form method="POST" action="{{ path('oauth_google_callback') }}">
+        <div class="provider-selector">
+            {% for child in form.provider %}
+                <label class="provider-option{% if child.vars.checked %} selected{% endif %}" data-provider="{{ child.vars.value }}">
+                    {{ form_widget(child) }}
+                    <div class="icon">{% if child.vars.value == 'redmine' %}🔴{% else %}🔵{% endif %}</div>
+                    <div class="name">{{ child.vars.label }}</div>
+                </label>
+            {% endfor %}
+        </div>
 
-            <div class="form-group">
-                <label for="redmine_url">Redmine URL</label>
-                <input type="text"
-                       id="redmine_url"
-                       name="redmine_url"
-                       placeholder="https://redmine.example.com"
-                       required>
-                <div class="help-text">The full URL of your Redmine instance (without trailing slash)</div>
-            </div>
+        <div class="form-group">
+            {{ form_label(form.provider_url) }}
+            {{ form_widget(form.provider_url) }}
+            {% if form.provider_url.vars.help %}
+                <div class="help-text" id="url-help">{{ form.provider_url.vars.help }}</div>
+            {% endif %}
+            {{ form_errors(form.provider_url) }}
+        </div>
 
-            <div class="form-group">
-                <label for="redmine_api_key">API Key</label>
-                <input type="text"
-                       id="redmine_api_key"
-                       name="redmine_api_key"
-                       placeholder="Your Redmine API key"
-                       required>
-                <div class="help-text">Find your API key in: My account → API access key (right column)</div>
-            </div>
+        <div class="form-group jira-fields" id="jira-email-group">
+            {{ form_label(form.provider_email) }}
+            {{ form_widget(form.provider_email) }}
+            {% if form.provider_email.vars.help %}
+                <div class="help-text">{{ form.provider_email.vars.help }}</div>
+            {% endif %}
+            {{ form_errors(form.provider_email) }}
+        </div>
 
-            <button type="submit">Authorize Access</button>
-        </form>
+        <div class="form-group">
+            {{ form_label(form.provider_api_key) }}
+            {{ form_widget(form.provider_api_key) }}
+            {% if form.provider_api_key.vars.help %}
+                <div class="help-text" id="api-key-help">{{ form.provider_api_key.vars.help }}</div>
+            {% endif %}
+            {{ form_errors(form.provider_api_key) }}
+        </div>
+
+        {{ form_widget(form.submit) }}
+
+        {{ form_end(form) }}
     </div>
+
+    <script>
+        const providerOptions = document.querySelectorAll('.provider-option');
+        const jiraEmailGroup = document.getElementById('jira-email-group');
+        const urlInput = document.querySelector('[name="provider_credentials[provider_url]"]');
+        const urlLabel = document.querySelector('label[for="provider_credentials_provider_url"]');
+        const urlHelp = document.getElementById('url-help');
+        const apiKeyLabel = document.querySelector('label[for="provider_credentials_provider_api_key"]');
+        const apiKeyHelp = document.getElementById('api-key-help');
+        const providerEmailInput = document.querySelector('[name="provider_credentials[provider_email]"]');
+
+        function updateFormForProvider(provider) {
+            providerOptions.forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.provider === provider);
+            });
+
+            if (provider === 'jira') {
+                jiraEmailGroup.classList.add('visible');
+                providerEmailInput.setAttribute('required', 'required');
+                urlLabel.textContent = 'Jira URL';
+                urlInput.placeholder = 'https://your-company.atlassian.net';
+                if (urlHelp) urlHelp.textContent = 'Your Atlassian Cloud URL (e.g., company.atlassian.net)';
+                apiKeyLabel.textContent = 'API Token';
+                if (apiKeyHelp) apiKeyHelp.textContent = 'Create a token at: https://id.atlassian.com/manage-profile/security/api-tokens';
+            } else {
+                jiraEmailGroup.classList.remove('visible');
+                providerEmailInput.removeAttribute('required');
+                urlLabel.textContent = 'Redmine URL';
+                urlInput.placeholder = 'https://redmine.example.com';
+                if (urlHelp) urlHelp.textContent = 'The full URL of your Redmine instance (without trailing slash)';
+                apiKeyLabel.textContent = 'API Key';
+                if (apiKeyHelp) apiKeyHelp.textContent = 'Find your API key in: My account → API access key (right column)';
+            }
+        }
+
+        providerOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const radio = option.querySelector('input[type="radio"]');
+                radio.checked = true;
+                updateFormForProvider(radio.value);
+            });
+        });
+
+        // Initialize
+        const checkedRadio = document.querySelector('.provider-option input[type="radio"]:checked');
+        if (checkedRadio) {
+            updateFormForProvider(checkedRadio.value);
+        }
+    </script>
 </body>
 </html>

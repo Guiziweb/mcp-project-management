@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Form\ProviderCredentialsType;
 use App\Infrastructure\Security\GoogleAuthService;
 use App\Infrastructure\Security\JwtTokenValidator;
 use App\Infrastructure\Security\OAuthAuthorizationCodeStore;
@@ -118,7 +119,7 @@ final class OAuthController extends AbstractController
 
     /**
      * Google OAuth callback endpoint.
-     * Receives the user from Google, then shows form to enter Redmine credentials.
+     * Receives the user from Google, then shows form to enter provider credentials.
      */
     #[Route('/oauth/google-callback', name: 'oauth_google_callback', methods: ['GET', 'POST'])]
     public function googleCallback(Request $request): Response
@@ -126,7 +127,7 @@ final class OAuthController extends AbstractController
         $session = $request->getSession();
 
         // Handle GET: Google redirects back with authorization code
-        if ($request->isMethod('GET')) {
+        if ($request->isMethod('GET') && $request->query->has('code')) {
             $code = $request->query->get('code');
             $state = $request->query->get('state');
             $expectedState = $session->get('google_oauth_state');
@@ -150,42 +151,40 @@ final class OAuthController extends AbstractController
 
                 $session->set('google_user_email', $googleUser['email']);
                 $session->set('google_user_name', $googleUser['name']);
-
-                // Always show form to enter/update Redmine credentials
-                return $this->render('oauth/authorize.html.twig', [
-                    'google_user_name' => $googleUser['name'],
-                    'google_user_email' => $googleUser['email'],
-                    'client_id' => $session->get('oauth_client_id'),
-                    'redirect_uri' => $session->get('oauth_redirect_uri'),
-                    'state' => $session->get('oauth_state'),
-                ]);
             } catch (\RuntimeException $e) {
                 return new JsonResponse(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
             }
         }
 
-        // Handle POST: User submitted Redmine credentials
-        $redmineUrl = $request->request->get('redmine_url');
-        $redmineApiKey = $request->request->get('redmine_api_key');
+        // Check session validity
         $userEmail = $session->get('google_user_email');
-
         if (!$userEmail) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Session expired, please start authorization again'], 400);
         }
 
-        if (!$redmineUrl || !is_string($redmineUrl) || !$redmineApiKey || !is_string($redmineApiKey)) {
-            return $this->render('oauth/authorize.html.twig', [
-                'google_user_name' => $session->get('google_user_name'),
-                'google_user_email' => $userEmail,
-                'error' => 'Please provide both Redmine URL and API key',
-            ]);
+        // Create and handle form
+        $form = $this->createForm(ProviderCredentialsType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+
+            // Store credentials in session for authorization code exchange
+            $session->set('provider', $data['provider']);
+            $session->set('provider_url', rtrim($data['provider_url'], '/'));
+            $session->set('provider_api_key', $data['provider_api_key']);
+            if (!empty($data['provider_email'])) {
+                $session->set('provider_email', $data['provider_email']);
+            }
+
+            return $this->completeAuthorization($session);
         }
 
-        // Store credentials in session for authorization code exchange
-        $session->set('redmine_url', rtrim($redmineUrl, '/'));
-        $session->set('redmine_api_key', $redmineApiKey);
-
-        return $this->completeAuthorization($session);
+        return $this->render('oauth/authorize.html.twig', [
+            'form' => $form,
+            'google_user_name' => $session->get('google_user_name'),
+            'google_user_email' => $userEmail,
+        ]);
     }
 
     /**
@@ -197,18 +196,23 @@ final class OAuthController extends AbstractController
         $redirectUri = $session->get('oauth_redirect_uri');
         $state = $session->get('oauth_state');
         $userEmail = $session->get('google_user_email');
-        $redmineUrl = $session->get('redmine_url');
-        $redmineApiKey = $session->get('redmine_api_key');
 
         // Generate and store authorization code with credentials
         $authCode = bin2hex(random_bytes(32));
-        $this->codeStore->store($authCode, [
+        $authData = [
             'user_id' => $userEmail,
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'redmine_url' => $redmineUrl,
-            'redmine_api_key' => $redmineApiKey,
-        ]);
+            'provider' => $session->get('provider', 'redmine'),
+            'provider_url' => $session->get('provider_url'),
+            'provider_api_key' => $session->get('provider_api_key'),
+        ];
+
+        if ($session->has('provider_email')) {
+            $authData['provider_email'] = $session->get('provider_email');
+        }
+
+        $this->codeStore->store($authCode, $authData);
 
         // Clear session
         $session->remove('oauth_client_id');
@@ -217,8 +221,10 @@ final class OAuthController extends AbstractController
         $session->remove('google_oauth_state');
         $session->remove('google_user_email');
         $session->remove('google_user_name');
-        $session->remove('redmine_url');
-        $session->remove('redmine_api_key');
+        $session->remove('provider');
+        $session->remove('provider_url');
+        $session->remove('provider_api_key');
+        $session->remove('provider_email');
 
         // Redirect back to client with authorization code
         $redirectUrl = $redirectUri.'?code='.$authCode;
@@ -271,17 +277,26 @@ final class OAuthController extends AbstractController
             return new JsonResponse(['error' => 'invalid_grant', 'error_description' => 'Redirect URI mismatch'], 400);
         }
 
+        // Build credentials array
+        $credentials = [
+            'provider' => $authData['provider'],
+            'url' => $authData['provider_url'],
+            'key' => $authData['provider_api_key'],
+        ];
+
+        if (!empty($authData['provider_email'])) {
+            $credentials['email'] = $authData['provider_email'];
+        }
+
         // Generate tokens with embedded credentials
         $accessToken = $this->tokenValidator->createAccessToken(
             userId: $authData['user_id'],
-            redmineUrl: $authData['redmine_url'],
-            redmineApiKey: $authData['redmine_api_key'],
+            credentials: $credentials,
         );
 
         $refreshToken = $this->tokenValidator->createRefreshToken(
             userId: $authData['user_id'],
-            redmineUrl: $authData['redmine_url'],
-            redmineApiKey: $authData['redmine_api_key'],
+            credentials: $credentials,
         );
 
         return new JsonResponse([
@@ -313,19 +328,17 @@ final class OAuthController extends AbstractController
             $payload = $this->tokenValidator->decodeToken($refreshToken);
             $credentials = $this->tokenValidator->extractCredentials($refreshToken);
 
-            // Generate new tokens
+            // Generate new tokens (credentials already in correct format from extractCredentials)
             $newAccessToken = $this->tokenValidator->createAccessToken(
                 userId: (string) $payload->sub,
-                redmineUrl: $credentials['url'],
-                redmineApiKey: $credentials['key'],
+                credentials: $credentials,
                 role: $payload->role ?? 'user',
                 isBot: $payload->is_bot ?? false,
             );
 
             $newRefreshToken = $this->tokenValidator->createRefreshToken(
                 userId: (string) $payload->sub,
-                redmineUrl: $credentials['url'],
-                redmineApiKey: $credentials['key'],
+                credentials: $credentials,
                 role: $payload->role ?? 'user',
                 isBot: $payload->is_bot ?? false,
             );

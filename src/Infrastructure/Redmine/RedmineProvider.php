@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine;
 
-use App\Api\RedmineService;
 use App\Domain\Model\Activity;
 use App\Domain\Model\Issue;
 use App\Domain\Model\Project;

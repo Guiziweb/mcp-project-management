@@ -34,12 +34,14 @@
         "kbsali/redmine-api": "^2.8",
         "laminas/laminas-httphandlerrunner": "^2.13",
         "league/oauth2-google": "^4.1",
+        "lesstif/jira-cloud-restapi": "^1.10",
         "mcp/sdk": "^0.1.0",
         "nyholm/psr7": "^1.8.2",
         "nyholm/psr7-server": "^1.1",
         "symfony/console": "7.3.*",
         "symfony/dotenv": "7.3.*",
         "symfony/flex": "^2.10",
+        "symfony/form": "7.3.*",
         "symfony/framework-bundle": "7.3.*",
         "symfony/http-client": "7.3.*",
         "symfony/monolog-bundle": "^3.11.1",
@@ -48,6 +50,7 @@
         "symfony/security-bundle": "7.3.*",
         "symfony/serializer": "7.3.*",
         "symfony/twig-bundle": "7.3.*",
+        "symfony/validator": "7.3.*",
         "symfony/yaml": "7.3.*"
     },
     "require-dev": {

@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.vscode
+var/cache
+var/log
+vendor
+node_modules
+.env.local
+.env.*.local
+.php-cs-fixer.cache
+coverage.xml
+.phpunit.cache

@@ -1,7 +1,7 @@
 # Makefile pour redmine-mcp
 # Usage: make [target]
 
-.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod
+.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy
 
 # Default target
 .DEFAULT_GOAL := help
@@ -57,3 +57,24 @@ help: ## Afficher cette aide
 	@echo "Usage: make <target>"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*?##/ { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+# Docker
+docker-build: ## Build l'image Docker
+	docker build -t redmine-mcp .
+
+docker-up: ## Lancer le container
+	docker compose up -d
+
+docker-down: ## Arrêter le container
+	docker compose down
+
+docker-rebuild: ## Rebuild complet (down + build + up)
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+
+docker-logs: ## Voir les logs du container
+	docker compose logs -f
+
+deploy: ## Déployer (rebuild Docker)
+	$(MAKE) docker-rebuild

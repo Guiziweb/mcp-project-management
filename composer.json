@@ -3,7 +3,17 @@
     "description": "MCP (Model Context Protocol) server for Redmine integration with AI assistants like Claude Desktop",
     "type": "project",
     "license": "MIT",
-    "keywords": ["mcp", "redmine", "claude", "ai", "assistant", "time-tracking", "project-management", "api", "symfony"],
+    "keywords": [
+        "mcp",
+        "redmine",
+        "claude",
+        "ai",
+        "assistant",
+        "time-tracking",
+        "project-management",
+        "api",
+        "symfony"
+    ],
     "authors": [
         {
             "name": "Camille Islasse",

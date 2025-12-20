@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Permet de déclencher manuellement
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -21,14 +21,11 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ALLOWED_EMAIL_DOMAINS: ${{ secrets.ALLOWED_EMAIL_DOMAINS }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: APP_SECRET,JWT_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY,ALLOWED_EMAIL_DOMAINS,DB_NAME,DB_USER,DB_PASSWORD
+          envs: APP_SECRET,JWT_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY,ALLOWED_EMAIL_DOMAINS
           script: |
             cd /opt/redmine-mcp
 
@@ -43,17 +40,12 @@ jobs:
             export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
             export ENCRYPTION_KEY="$ENCRYPTION_KEY"
             export ALLOWED_EMAIL_DOMAINS="$ALLOWED_EMAIL_DOMAINS"
-            export DB_NAME="$DB_NAME"
-            export DB_USER="$DB_USER"
-            export DB_PASSWORD="$DB_PASSWORD"
 
             envsubst < .env.template > .env
 
             # Deploy with Docker
-            docker-compose down
-            docker-compose up -d --build
+            make deploy
 
             # Show deployment status
             echo "Deployment completed!"
             docker ps | grep mcp-redmine
-            docker logs mcp-redmine-app --tail 20

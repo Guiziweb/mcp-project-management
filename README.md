@@ -18,47 +18,63 @@ A secure, multi-user MCP (Model Context Protocol) server that integrates Redmine
 #### 1. Get the Server URL
 
 Ask your administrator for:
-- Server URL (e.g., `https://mcp-redmine.onrender.com`)
+- Server URL (e.g., `https://mcp.yourcompany.com`)
 - Confirm your email is whitelisted
 
-#### 2. Configure Claude Desktop
+#### 2. Configure Claude Code
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "redmine": {
-      "url": "https://mcp-redmine.onrender.com"
-    }
-  }
-}
-```
-
-#### 3. Configure Claude Code
-
-Edit `~/.config/claude-code/.mcp.json`:
+Create `.mcp.json` in your project or `~/.claude/.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "redmine": {
-      "url": "https://mcp-redmine.onrender.com"
+      "type": "http",
+      "url": "https://mcp.yourcompany.com/mcp"
     }
   }
 }
 ```
 
-#### 4. Restart and Authenticate
+#### 3. Authenticate
 
-1. Restart Claude Desktop/Code
+1. Run `/mcp` in Claude Code
 2. First use will redirect you to Google Sign-In
 3. After authentication, provide your Redmine URL and API key
 4. Done! You can now interact with Redmine
 
 ### For Administrators (Deployment)
 
-Deploy on Render.com (free tier) using the included `render.yaml` blueprint. See Google OAuth Configuration section below for setup instructions.
+#### Docker Deployment
+
+```bash
+# Clone and configure
+git clone https://github.com/guiziweb/mcp-redmine.git
+cd mcp-redmine
+cp .env.example .env.local
+# Edit .env.local with your settings
+
+# Deploy
+make deploy
+
+# View logs
+make docker-logs
+```
+
+#### GitHub Actions (Auto-deploy)
+
+The repository includes a GitHub Actions workflow for automatic deployment to a VPS. Configure these secrets in your repository:
+
+- `VPS_HOST`: Your server hostname
+- `VPS_USER`: SSH username
+- `VPS_SSH_KEY`: SSH private key
+- `APP_SECRET`: Symfony app secret
+- `JWT_SECRET`: JWT signing secret
+- `APP_URL`: Your server URL
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+- `ENCRYPTION_KEY`: Sodium encryption key (base64)
+- `ALLOWED_EMAIL_DOMAINS`: Allowed email domains
 
 ## Available Tools
 
@@ -80,32 +96,41 @@ Deploy on Render.com (free tier) using the included `render.yaml` blueprint. See
 
 ## Architecture
 
-```mermaid
-graph TB
-    Client[Claude Client<br/>Desktop/Code]
-
-    subgraph Server["MCP Redmine Server (Stateless)"]
-        OAuth[OAuth2 Controller<br/>Google Sign-In + Email Whitelist]
-        JWT[JWT with Encrypted Credentials<br/>Access Token 24h / Refresh Token 30d]
-        Factory[UserRedmineProviderFactory<br/>Per-user Redmine clients]
-    end
-
-    Redmine[Redmine API<br/>Your Instance]
-
-    Client -->|HTTP + JWT| OAuth
-    OAuth --> JWT
-    JWT --> Factory
-    Factory --> Redmine
-
-    style Client fill:#e1f5ff
-    style Server fill:#f5f5f5
-    style Redmine fill:#ffe1e1
+```
+┌─────────────────────┐
+│   Claude Client     │
+│  (Desktop / Code)   │
+└─────────┬───────────┘
+          │ HTTP + JWT
+          ▼
+┌─────────────────────────────────────────┐
+│     MCP Redmine Server (Stateless)      │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  OAuth2 Controller              │    │
+│  │  Google Sign-In + Email Check   │    │
+│  └─────────────┬───────────────────┘    │
+│                │                        │
+│  ┌─────────────▼───────────────────┐    │
+│  │  JWT with Encrypted Credentials │    │
+│  │  Access: 24h / Refresh: 30d     │    │
+│  └─────────────┬───────────────────┘    │
+│                │                        │
+│  ┌─────────────▼───────────────────┐    │
+│  │  Per-user Redmine Client        │    │
+│  └─────────────┬───────────────────┘    │
+└────────────────┼────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────┐
+│    Redmine API      │
+│   Your Instance     │
+└─────────────────────┘
 ```
 
 **Key Components:**
 - **OAuth2 Controller**: Handles Google authentication and email whitelist verification
 - **JWT Tokens**: Access token (24h) + Refresh token (30 days) with encrypted Redmine credentials
-- **Provider Factory**: Creates per-user Redmine API clients on-demand
 - **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) inside JWT
 
 **Stateless Design:**
@@ -120,7 +145,7 @@ graph TB
 - PHP 8.2+
 - Composer
 - Sodium extension
-- Access to Redmine instance with API enabled
+- Docker (for deployment)
 
 ### Local Setup
 
@@ -130,7 +155,7 @@ git clone https://github.com/guiziweb/mcp-redmine.git
 cd mcp-redmine
 
 # Install dependencies
-composer install
+make dev
 
 # Configure environment
 cp .env.example .env.local
@@ -144,13 +169,24 @@ ngrok http 8000
 php -S localhost:8000 -t public/
 ```
 
+### Makefile Commands
+
+```bash
+make dev          # Install dev dependencies
+make deploy       # Rebuild and restart Docker
+make docker-logs  # View container logs
+make test         # Run tests
+make phpstan      # Static analysis
+make cs-fix       # Fix code style
+```
+
 ### Environment Variables
 
 **Required:**
 - `APP_URL`: Your server URL (ngrok for dev, custom domain for prod)
 - `GOOGLE_CLIENT_ID`: From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET`: From Google Cloud Console
-- `ENCRYPTION_KEY`: Base64-encoded 32-byte Sodium key (for encrypting credentials in JWT)
+- `ENCRYPTION_KEY`: Base64-encoded 32-byte Sodium key
 - `JWT_SECRET`: Random string for JWT signing
 
 **Optional:**
@@ -158,32 +194,28 @@ php -S localhost:8000 -t public/
 - `ALLOWED_EMAIL_DOMAINS`: Comma-separated list of allowed email domains
 - `ALLOWED_EMAILS`: Comma-separated list of specific allowed emails
 
-### Bot Tokens (for n8n / automation)
+### Bot Tokens (for automation)
 
 Create a long-lived bot token with embedded credentials:
 
 ```bash
-php bin/console app:create-bot \
-  --email=bot@example.com \
-  --redmine-url=https://redmine.example.com \
-  --redmine-api-key=your-api-key \
-  --jwt-expiry="+1 year"
+docker exec mcp-redmine-app php bin/console app:create-bot \
+  bot-name \
+  https://redmine.example.com \
+  your-redmine-api-key
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-composer test
-
-# Run specific test
-vendor/bin/phpunit tests/Tools/ListProjectsToolTest.php
+make test
 
 # Static analysis
-vendor/bin/phpstan analyze
+make phpstan
 
 # Code style
-vendor/bin/php-cs-fixer fix
+make cs-fix
 ```
 
 ## Google OAuth Configuration
@@ -200,7 +232,6 @@ vendor/bin/php-cs-fixer fix
 2. User Type: **External**
 3. App name: "MCP Redmine"
 4. Scopes: `email`, `profile` (non-sensitive, no validation required)
-5. Test users: Add your team emails (or skip if using domain whitelist)
 
 ### 3. Create OAuth2 Credentials
 
@@ -208,22 +239,30 @@ vendor/bin/php-cs-fixer fix
 2. Application type: **Web application**
 3. Authorized redirect URIs:
    - Development: `https://your-ngrok-url.ngrok-free.dev/oauth/google-callback`
-   - Production: `https://mcp-redmine.onrender.com/oauth/google-callback`
+   - Production: `https://mcp.yourcompany.com/oauth/google-callback`
 4. Save and copy Client ID and Client Secret
 
 ### 4. Email Whitelist
 
-Configure allowed users via environment variables in `.env.local` or Render dashboard:
+Configure allowed users via environment variables:
 
 ```bash
 # Allow entire domains (comma-separated)
-ALLOWED_EMAIL_DOMAINS=example.com
+ALLOWED_EMAIL_DOMAINS=yourcompany.com
 
 # Allow specific emails (comma-separated)
 ALLOWED_EMAILS=alice@example.com,bob@example.com
 ```
 
 Both options can be combined. If neither is set, no users will be able to access the application.
+
+## Security
+
+- **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) in JWT
+- **Google OAuth**: Identity verified through Google
+- **Email Whitelist**: Only authorized emails can access
+- **HTTPS**: Required in production
+- **Token Expiry**: Access tokens expire in 24h, refresh tokens in 30 days
 
 ## Troubleshooting
 
@@ -240,30 +279,12 @@ Your email is not in the whitelist. Contact your administrator.
 - Refresh tokens expire after 30 days
 - Re-authenticate via Google to get new tokens
 
-### "Service unavailable" in production
-- Check server logs
-- Verify all environment variables are set
-- Ensure encryption key is properly configured
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Run tests and code quality checks
-4. Submit a pull request
-
 ## License
 
 MIT
 
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/guiziweb/mcp-redmine/issues)
-
 ## Related
 
 - [Model Context Protocol](https://github.com/anthropics/mcp)
-- [Claude Desktop](https://claude.ai/desktop)
-- [Claude Code](https://docs.claude.com/claude-code)
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 - [Redmine API](https://www.redmine.org/projects/redmine/wiki/Rest_api)

@@ -24,11 +24,14 @@ WORKDIR /app
 # Copy composer files first for better layer caching
 COPY composer.json composer.lock symfony.lock ./
 
-# Install dependencies
+# Install dependencies (without scripts, they need app files)
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
 # Copy application files
 COPY . .
+
+# Run post-install scripts now that app files are present
+RUN composer run-script post-install-cmd --no-interaction
 
 # Copy nginx and supervisor configurations
 COPY docker/nginx/nginx.conf /etc/nginx/http.d/default.conf
@@ -39,9 +42,8 @@ RUN mkdir -p var/cache var/log var /var/log/supervisor /run/nginx && \
     chown -R www-data:www-data /app /var/log/nginx /run/nginx && \
     chmod -R 775 var/
 
-# Run Symfony post-install scripts
-RUN composer dump-autoload --optimize && \
-    chown -R www-data:www-data var/
+# Set permissions
+RUN chown -R www-data:www-data var/
 
 # Expose port
 EXPOSE 8080

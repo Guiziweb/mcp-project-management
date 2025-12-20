@@ -14,6 +14,7 @@ use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
 /**
  * Authenticates users via JWT tokens in the Authorization header.
@@ -21,7 +22,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
  * Stateless architecture: credentials are extracted directly from the JWT,
  * no database lookup required.
  */
-final class JwtAuthenticator extends AbstractAuthenticator
+final class JwtAuthenticator extends AbstractAuthenticator implements AuthenticationEntryPointInterface
 {
     public function __construct(
         private readonly JwtTokenValidator $tokenValidator,
@@ -78,16 +79,30 @@ final class JwtAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
+        return $this->createUnauthorizedResponse($request, $exception->getMessage());
+    }
+
+    /**
+     * Called when an unauthenticated user tries to access a protected resource.
+     * Required by AuthenticationEntryPointInterface.
+     */
+    public function start(Request $request, ?AuthenticationException $authException = null): Response
+    {
+        return $this->createUnauthorizedResponse($request, $authException?->getMessage() ?? 'Authentication required');
+    }
+
+    private function createUnauthorizedResponse(Request $request, string $message): JsonResponse
+    {
         $scheme = $request->headers->get('X-Forwarded-Proto', $request->getScheme());
         $host = $request->getHost();
         $baseUrl = $scheme.'://'.$host;
 
         return new JsonResponse(
-            ['error' => 'unauthorized', 'message' => $exception->getMessage()],
+            ['error' => 'unauthorized', 'message' => $message],
             401,
             [
                 'WWW-Authenticate' => sprintf(
-                    'Bearer realm="MCP Redmine", resource_metadata="%s/.well-known/oauth-protected-resource"',
+                    'Bearer resource_metadata="%s/.well-known/oauth-protected-resource"',
                     $baseUrl
                 ),
             ]

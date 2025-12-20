@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.2...v1.2.3) (2025-12-20)
+
+
+### Bug Fixes
+
+* add asset-map:compile for production assets ([3d2cae0](https://github.com/Guiziweb/redmine-mcp/commit/3d2cae0367b74acb40c4bf2409a8adc7a8c206cf))
+* LiveComponent form submission and session expiry handling ([de6b13c](https://github.com/Guiziweb/redmine-mcp/commit/de6b13c046bcb462014af05e4213f562550a81e2))
+
 ## [1.2.2](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.1...v1.2.2) (2025-12-20)
 
 

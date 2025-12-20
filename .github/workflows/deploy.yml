@@ -29,8 +29,9 @@ jobs:
           script: |
             cd /opt/redmine-mcp
 
-            # Pull latest code
-            git pull origin main
+            # Force update to latest code (discard local changes)
+            git fetch origin main
+            git reset --hard origin/main
 
             # Create .env from template with secrets
             export APP_SECRET="$APP_SECRET"

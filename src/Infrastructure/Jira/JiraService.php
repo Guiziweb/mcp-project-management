@@ -112,7 +112,7 @@ class JiraService
     public function getIssue(string $issueIdOrKey): array
     {
         $issueService = new IssueService($this->configuration);
-        $issue = $issueService->get($issueIdOrKey);
+        $issue = $issueService->get($issueIdOrKey, ['expand' => 'renderedFields']);
 
         $attachments = [];
         if (isset($issue->fields->attachment)) {
@@ -121,11 +121,14 @@ class JiraService
             }
         }
 
+        // Use renderedFields for HTML description (server-side ADF conversion)
+        $description = $issue->renderedFields['description'] ?? '';
+
         return [
             'id' => (int) $issue->id,
             'key' => $issue->key,
             'summary' => $issue->fields->summary ?? '',
-            'description' => $issue->fields->description ?? null,
+            'description' => $description,
             'status' => $issue->fields->status->name ?? null,
             'project' => [
                 'id' => (int) ($issue->fields->project->id ?? 0),

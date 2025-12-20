@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.6...v1.3.0) (2025-12-20)
+
+
+### Features
+
+* **jira:** add attachment support ([8182baf](https://github.com/Guiziweb/redmine-mcp/commit/8182bafce031719c2ee5401af272efc5f29a49e2))
+
+
+### Miscellaneous Chores
+
+* add lint commands to Makefile and simplify CI ([600f47d](https://github.com/Guiziweb/redmine-mcp/commit/600f47dc377ea954da64ad36195ef983786c7a9b))
+
 ## [1.2.6](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.5...v1.2.6) (2025-12-20)
 
 

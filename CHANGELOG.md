@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.5...v1.2.6) (2025-12-20)
+
+
+### Bug Fixes
+
+* allow .well-known paths in nginx for OAuth discovery ([e5e4609](https://github.com/Guiziweb/redmine-mcp/commit/e5e4609d671eb2332b33ede057309e19abed1be0))
+
 ## [1.2.5](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.4...v1.2.5) (2025-12-20)
 
 

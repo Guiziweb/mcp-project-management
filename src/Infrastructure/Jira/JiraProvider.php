@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Jira;
 
+use App\Domain\Model\Attachment;
 use App\Domain\Model\Issue;
 use App\Domain\Model\Project;
 use App\Domain\Model\TimeEntry;
@@ -187,14 +188,12 @@ class JiraProvider implements TimeTrackingProviderInterface
 
     public function getAttachment(int $attachmentId): array
     {
-        // TODO: Implement when needed
-        throw new \RuntimeException('getAttachment not yet implemented for Jira');
+        return $this->jiraService->getAttachment($attachmentId);
     }
 
     public function downloadAttachment(int $attachmentId): string
     {
-        // TODO: Implement when needed
-        throw new \RuntimeException('downloadAttachment not yet implemented for Jira');
+        return $this->jiraService->downloadAttachment($attachmentId);
     }
 
     public function updateTimeEntry(
@@ -234,6 +233,13 @@ class JiraProvider implements TimeTrackingProviderInterface
         $projectName = $data['project']['name'] ?? '';
         $projectKey = $data['project']['key'] ?? '';
 
+        $attachments = [];
+        if (isset($data['attachments']) && is_array($data['attachments'])) {
+            foreach ($data['attachments'] as $attachmentData) {
+                $attachments[] = $this->mapAttachment($attachmentData);
+            }
+        }
+
         return new Issue(
             id: $data['id'],
             title: $data['summary'] ?? '',
@@ -243,6 +249,33 @@ class JiraProvider implements TimeTrackingProviderInterface
                 name: $projectKey ? sprintf('%s (%s)', $projectName, $projectKey) : $projectName,
             ),
             status: $data['status'] ?? 'Unknown',
+            attachments: $attachments,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function mapAttachment(array $data): Attachment
+    {
+        $createdOn = null;
+        if (isset($data['created_on'])) {
+            try {
+                $createdOn = new \DateTimeImmutable($data['created_on']);
+            } catch (\Exception) {
+                // Ignore invalid dates
+            }
+        }
+
+        return new Attachment(
+            id: $data['id'],
+            filename: $data['filename'] ?? '',
+            filesize: $data['filesize'] ?? 0,
+            contentType: $data['content_type'] ?? 'application/octet-stream',
+            description: null,
+            contentUrl: $data['content_url'] ?? null,
+            author: $data['author'] ?? null,
+            createdOn: $createdOn,
         );
     }
 

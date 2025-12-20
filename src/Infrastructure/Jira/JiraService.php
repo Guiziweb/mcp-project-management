@@ -6,6 +6,7 @@ namespace App\Infrastructure\Jira;
 
 use JiraCloud\ADF\AtlassianDocumentFormat;
 use JiraCloud\Configuration\ArrayConfiguration;
+use JiraCloud\Issue\Attachment;
 use JiraCloud\Issue\IssueService;
 use JiraCloud\Issue\Worklog;
 use JiraCloud\Project\ProjectService;
@@ -113,6 +114,13 @@ class JiraService
         $issueService = new IssueService($this->configuration);
         $issue = $issueService->get($issueIdOrKey);
 
+        $attachments = [];
+        if (isset($issue->fields->attachment)) {
+            foreach ($issue->fields->attachment as $attachment) {
+                $attachments[] = $this->mapAttachment($attachment);
+            }
+        }
+
         return [
             'id' => (int) $issue->id,
             'key' => $issue->key,
@@ -124,6 +132,7 @@ class JiraService
                 'key' => $issue->fields->project->key ?? '',
                 'name' => $issue->fields->project->name ?? '',
             ],
+            'attachments' => $attachments,
         ];
     }
 
@@ -214,5 +223,47 @@ class JiraService
     {
         $issueService = new IssueService($this->configuration);
         $issueService->deleteWorklog($issueIdOrKey, $worklogId);
+    }
+
+    /**
+     * Get attachment metadata.
+     *
+     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
+     */
+    public function getAttachment(int $attachmentId): array
+    {
+        $attachmentService = new JiraAttachmentClient($this->configuration);
+        $attachment = $attachmentService->get($attachmentId);
+
+        return $this->mapAttachment($attachment);
+    }
+
+    /**
+     * Download attachment content.
+     *
+     * @return string Binary content
+     */
+    public function downloadAttachment(int $attachmentId): string
+    {
+        $attachmentService = new JiraAttachmentClient($this->configuration);
+
+        return $attachmentService->downloadContent($attachmentId);
+    }
+
+    /**
+     * Map Jira Attachment to array.
+     *
+     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
+     */
+    private function mapAttachment(Attachment $attachment): array
+    {
+        return [
+            'id' => (int) $attachment->id,
+            'filename' => $attachment->filename ?? '',
+            'filesize' => $attachment->size ?? 0,
+            'content_type' => $attachment->mimeType ?? 'application/octet-stream',
+            'description' => null, // Jira attachments don't have descriptions
+            'author' => $attachment->author->displayName ?? null,
+        ];
     }
 }

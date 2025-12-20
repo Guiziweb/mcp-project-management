@@ -105,7 +105,7 @@ final class JwtTokenValidator
      * Create a JWT token with embedded provider credentials.
      *
      * @param array{provider: string, url: string, key: string, email?: string} $credentials
-     * @param array<string, mixed> $extraClaims
+     * @param array<string, mixed>                                              $extraClaims
      */
     public function createTokenWithCredentials(
         string $userId,

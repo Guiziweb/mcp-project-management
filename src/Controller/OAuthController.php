@@ -163,7 +163,11 @@ final class OAuthController extends AbstractController
         }
 
         // Create and handle form
-        $form = $this->createForm(ProviderCredentialsType::class);
+        // Get selected provider from submitted data to build form with correct fields
+        $submittedProvider = $request->request->all('provider_credentials')['provider'] ?? null;
+        $form = $this->createForm(ProviderCredentialsType::class, null, [
+            'selected_provider' => $submittedProvider,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -171,10 +175,10 @@ final class OAuthController extends AbstractController
 
             // Store credentials in session for authorization code exchange
             $session->set('provider', $data['provider']);
-            $session->set('provider_url', rtrim($data['provider_url'], '/'));
-            $session->set('provider_api_key', $data['provider_api_key']);
-            if (!empty($data['provider_email'])) {
-                $session->set('provider_email', $data['provider_email']);
+            $session->set('provider_url', rtrim($data['url'], '/'));
+            $session->set('provider_api_key', $data['api_key']);
+            if (!empty($data['email'])) {
+                $session->set('provider_email', $data['email']);
             }
 
             return $this->completeAuthorization($session);

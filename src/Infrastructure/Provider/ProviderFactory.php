@@ -36,9 +36,7 @@ final readonly class ProviderFactory
         return match ($credential->provider) {
             UserCredential::PROVIDER_REDMINE => $this->createRedmineProvider($credential),
             UserCredential::PROVIDER_JIRA => $this->createJiraProvider($credential),
-            default => throw new \InvalidArgumentException(
-                sprintf('Unsupported provider: %s', $credential->provider)
-            ),
+            default => throw new \InvalidArgumentException(sprintf('Unsupported provider: %s', $credential->provider)),
         };
     }
 

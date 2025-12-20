@@ -38,6 +38,7 @@
         "mcp/sdk": "^0.1.0",
         "nyholm/psr7": "^1.8.2",
         "nyholm/psr7-server": "^1.1",
+        "symfony/asset-mapper": "7.3.*",
         "symfony/console": "7.3.*",
         "symfony/dotenv": "7.3.*",
         "symfony/flex": "^2.10",
@@ -50,6 +51,7 @@
         "symfony/security-bundle": "7.3.*",
         "symfony/serializer": "7.3.*",
         "symfony/twig-bundle": "7.3.*",
+        "symfony/ux-live-component": "^2.31",
         "symfony/validator": "7.3.*",
         "symfony/yaml": "7.3.*"
     },
@@ -90,7 +92,8 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"

@@ -144,3 +144,8 @@ config/dev/
 phpstan.cache
 ###< PHPStan ###
 
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

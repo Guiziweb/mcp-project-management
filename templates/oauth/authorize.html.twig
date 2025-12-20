@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect Your Time Tracker</title>
+    {{ importmap('app') }}
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -112,12 +113,6 @@
             font-weight: 500;
             color: #333;
         }
-        .jira-fields {
-            display: none;
-        }
-        .jira-fields.visible {
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -131,97 +126,7 @@
             <p><strong>Claude Desktop</strong> is requesting access to your time tracking tool.</p>
         </div>
 
-        {{ form_start(form) }}
-
-        <div class="provider-selector">
-            {% for child in form.provider %}
-                <label class="provider-option{% if child.vars.checked %} selected{% endif %}" data-provider="{{ child.vars.value }}">
-                    {{ form_widget(child) }}
-                    <div class="icon">{% if child.vars.value == 'redmine' %}🔴{% else %}🔵{% endif %}</div>
-                    <div class="name">{{ child.vars.label }}</div>
-                </label>
-            {% endfor %}
-        </div>
-
-        <div class="form-group">
-            {{ form_label(form.provider_url) }}
-            {{ form_widget(form.provider_url) }}
-            {% if form.provider_url.vars.help %}
-                <div class="help-text" id="url-help">{{ form.provider_url.vars.help }}</div>
-            {% endif %}
-            {{ form_errors(form.provider_url) }}
-        </div>
-
-        <div class="form-group jira-fields" id="jira-email-group">
-            {{ form_label(form.provider_email) }}
-            {{ form_widget(form.provider_email) }}
-            {% if form.provider_email.vars.help %}
-                <div class="help-text">{{ form.provider_email.vars.help }}</div>
-            {% endif %}
-            {{ form_errors(form.provider_email) }}
-        </div>
-
-        <div class="form-group">
-            {{ form_label(form.provider_api_key) }}
-            {{ form_widget(form.provider_api_key) }}
-            {% if form.provider_api_key.vars.help %}
-                <div class="help-text" id="api-key-help">{{ form.provider_api_key.vars.help }}</div>
-            {% endif %}
-            {{ form_errors(form.provider_api_key) }}
-        </div>
-
-        {{ form_widget(form.submit) }}
-
-        {{ form_end(form) }}
+        {{ component('ProviderCredentialsForm') }}
     </div>
-
-    <script>
-        const providerOptions = document.querySelectorAll('.provider-option');
-        const jiraEmailGroup = document.getElementById('jira-email-group');
-        const urlInput = document.querySelector('[name="provider_credentials[provider_url]"]');
-        const urlLabel = document.querySelector('label[for="provider_credentials_provider_url"]');
-        const urlHelp = document.getElementById('url-help');
-        const apiKeyLabel = document.querySelector('label[for="provider_credentials_provider_api_key"]');
-        const apiKeyHelp = document.getElementById('api-key-help');
-        const providerEmailInput = document.querySelector('[name="provider_credentials[provider_email]"]');
-
-        function updateFormForProvider(provider) {
-            providerOptions.forEach(opt => {
-                opt.classList.toggle('selected', opt.dataset.provider === provider);
-            });
-
-            if (provider === 'jira') {
-                jiraEmailGroup.classList.add('visible');
-                providerEmailInput.setAttribute('required', 'required');
-                urlLabel.textContent = 'Jira URL';
-                urlInput.placeholder = 'https://your-company.atlassian.net';
-                if (urlHelp) urlHelp.textContent = 'Your Atlassian Cloud URL (e.g., company.atlassian.net)';
-                apiKeyLabel.textContent = 'API Token';
-                if (apiKeyHelp) apiKeyHelp.textContent = 'Create a token at: https://id.atlassian.com/manage-profile/security/api-tokens';
-            } else {
-                jiraEmailGroup.classList.remove('visible');
-                providerEmailInput.removeAttribute('required');
-                urlLabel.textContent = 'Redmine URL';
-                urlInput.placeholder = 'https://redmine.example.com';
-                if (urlHelp) urlHelp.textContent = 'The full URL of your Redmine instance (without trailing slash)';
-                apiKeyLabel.textContent = 'API Key';
-                if (apiKeyHelp) apiKeyHelp.textContent = 'Find your API key in: My account → API access key (right column)';
-            }
-        }
-
-        providerOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                const radio = option.querySelector('input[type="radio"]');
-                radio.checked = true;
-                updateFormForProvider(radio.value);
-            });
-        });
-
-        // Initialize
-        const checkedRadio = document.querySelector('.provider-option input[type="radio"]:checked');
-        if (checkedRadio) {
-            updateFormForProvider(checkedRadio.value);
-        }
-    </script>
 </body>
 </html>

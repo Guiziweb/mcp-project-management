@@ -45,6 +45,12 @@ jobs:
       - name: Run PHPStan
         run: make phpstan
 
+      - name: Lint Symfony container
+        run: php bin/console lint:container
+
+      - name: Lint Twig templates
+        run: php bin/console lint:twig templates/
+
   tests:
     name: Tests
     runs-on: ubuntu-latest

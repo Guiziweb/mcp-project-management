@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -18,38 +16,4 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS}
       ALLOWED_EMAILS: ${ALLOWED_EMAILS}
-      DATABASE_URL: postgresql://${DB_USER:-mcp_redmine}:${DB_PASSWORD}@db:5432/${DB_NAME:-mcp_redmine}?serverVersion=16&charset=utf8
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - mcp-network
-
-  db:
-    image: postgres:16-alpine
-    container_name: mcp-redmine-db
-    environment:
-      POSTGRES_DB: ${DB_NAME:-mcp_redmine}
-      POSTGRES_USER: ${DB_USER:-mcp_redmine}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - mcp_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mcp_redmine}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - mcp-network
-
-volumes:
-  mcp_postgres_data:
-    driver: local
-
-networks:
-  mcp-network:
-    driver: bridge

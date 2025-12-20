@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.4...v1.2.5) (2025-12-20)
+
+
+### Bug Fixes
+
+* disable form CSRF for LiveComponent + configurable APP_ENV ([77dc761](https://github.com/Guiziweb/redmine-mcp/commit/77dc7615f987f659c4764c67661f6e0fb99cda83))
+
 ## [1.2.4](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.3...v1.2.4) (2025-12-20)
 
 

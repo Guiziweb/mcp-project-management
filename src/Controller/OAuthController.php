@@ -136,6 +136,10 @@ final class OAuthController extends AbstractController
                 return new JsonResponse(['error' => 'access_denied', 'error_description' => 'User denied access or Google error'], 400);
             }
 
+            if (!$expectedState) {
+                return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Session expired, please start authorization again'], 400);
+            }
+
             try {
                 $googleUser = $this->googleAuth->handleCallback($code, (string) $state, $expectedState);
 

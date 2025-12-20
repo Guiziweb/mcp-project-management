@@ -3,130 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect Your Time Tracker</title>
+    <title>Connect Your Project Manager</title>
     {{ importmap('app') }}
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            margin-top: 0;
-            color: #333;
-            font-size: 24px;
-        }
-        .info {
-            background: #e8f4f8;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #555;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="url"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        input:focus {
-            outline: none;
-            border-color: #4a9eff;
-        }
-        .help-text {
-            font-size: 12px;
-            color: #777;
-            margin-top: 5px;
-        }
-        .error-list {
-            color: #c33;
-            font-size: 12px;
-            margin-top: 5px;
-            padding: 0;
-            list-style: none;
-        }
-        button[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            background: #4a9eff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        button[type="submit"]:hover {
-            background: #3a8eef;
-        }
-        .provider-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .provider-option {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .provider-option:hover {
-            border-color: #4a9eff;
-        }
-        .provider-option.selected {
-            border-color: #4a9eff;
-            background: #f0f7ff;
-        }
-        .provider-option input[type="radio"] {
-            display: none;
-        }
-        .provider-option .icon {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        .provider-option .name {
-            font-weight: 500;
-            color: #333;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="card">
-        <h1>Connect Your Time Tracker</h1>
+<body class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 border border-slate-700">
+            <h1 class="text-xl font-semibold text-white text-center mb-2">Connect Your Project Manager</h1>
 
-        <div class="info">
-            {% if google_user_name is defined %}
-                <p><strong>Signed in as:</strong> {{ google_user_name }} ({{ google_user_email }})</p>
+            {% if google_user_name is defined and google_user_name %}
+                <p class="text-slate-400 text-sm text-center mb-6">{{ google_user_email }}</p>
             {% endif %}
-            <p><strong>Claude Desktop</strong> is requesting access to your time tracking tool.</p>
-        </div>
 
-        {{ component('ProviderCredentialsForm') }}
+            {{ component('ProviderCredentialsForm') }}
+        </div>
     </div>
 </body>
 </html>

@@ -39,13 +39,6 @@ class TimeEntryService
         // Get provider capabilities for validation
         $capabilities = $this->provider->getCapabilities();
 
-        // Check daily limit
-        $dailyTotal = $this->getDailyTotal($spentAt);
-        if ($dailyTotal + $hours > $capabilities->maxDailyHours) {
-            $remaining = $capabilities->maxDailyHours - $dailyTotal;
-            throw new \InvalidArgumentException(sprintf('Daily limit exceeded. You already logged %.2f hours today. Maximum: %d hours. Remaining: %.2f hours.', $dailyTotal, $capabilities->maxDailyHours, max(0, $remaining)));
-        }
-
         // Validate activity requirement
         if ($capabilities->requiresActivity && !isset($metadata['activity_id'])) {
             throw new \InvalidArgumentException(sprintf('Provider "%s" requires an activity_id in metadata', $capabilities->name));
@@ -61,25 +54,6 @@ class TimeEntryService
             spentAt: $spentAt,
             metadata: $metadata
         );
-    }
-
-    /**
-     * Get total hours logged for a specific date.
-     */
-    public function getDailyTotal(\DateTimeInterface $date): float
-    {
-        $startOfDay = \DateTime::createFromInterface($date)->setTime(0, 0, 0);
-        $endOfDay = \DateTime::createFromInterface($date)->setTime(23, 59, 59);
-
-        $entries = $this->provider->getTimeEntries($startOfDay, $endOfDay);
-
-        $totalSeconds = array_reduce(
-            $entries,
-            fn (int $sum, TimeEntry $entry) => $sum + $entry->seconds,
-            0
-        );
-
-        return $totalSeconds / 3600;
     }
 
     /**

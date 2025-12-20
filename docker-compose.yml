@@ -7,7 +7,7 @@ services:
     ports:
       - "8090:8080"
     environment:
-      APP_ENV: prod
+      APP_ENV: ${APP_ENV:-prod}
       APP_SECRET: ${APP_SECRET}
       APP_URL: ${APP_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}

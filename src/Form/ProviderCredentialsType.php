@@ -68,8 +68,10 @@ class ProviderCredentialsType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
+        // CSRF disabled: LiveComponent uses same-origin/CORS protection instead
+        // See: https://github.com/symfony/ux/issues/2527
         $resolver->setDefaults([
-            'csrf_protection' => true,
+            'csrf_protection' => false,
             'selected_provider' => null,
         ]);
     }

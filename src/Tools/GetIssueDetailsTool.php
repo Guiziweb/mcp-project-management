@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class GetIssueDetailsTool
 {
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -30,15 +30,15 @@ final class GetIssueDetailsTool
     public function getIssueDetails(int $issue_id): array
     {
         try {
-            $issue = $this->provider->getIssue($issue_id);
+            $issue = $this->adapter->getIssue($issue_id);
 
-            // Format journals (comments/changes)
-            $journals = array_map(fn ($journal) => [
-                'id' => $journal->id,
-                'notes' => $journal->notes,
-                'author' => $journal->author,
-                'created_on' => $journal->createdOn?->format('Y-m-d H:i:s'),
-            ], $issue->journals);
+            // Format comments
+            $comments = array_map(fn ($comment) => [
+                'id' => $comment->id,
+                'notes' => $comment->notes,
+                'author' => $comment->author,
+                'created_on' => $comment->createdOn?->format('Y-m-d H:i:s'),
+            ], $issue->comments);
 
             // Format attachments
             $attachments = array_map(fn ($attachment) => [
@@ -63,9 +63,9 @@ final class GetIssueDetailsTool
                         'name' => $issue->project->name,
                     ],
                     'assignee' => $issue->assignee,
-                    'tracker' => $issue->tracker,
+                    'type' => $issue->type,
                     'priority' => $issue->priority,
-                    'journals' => $journals,
+                    'comments' => $comments,
                     'attachments' => $attachments,
                 ],
             ];

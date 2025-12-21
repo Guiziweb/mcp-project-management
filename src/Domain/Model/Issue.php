@@ -10,7 +10,7 @@ namespace App\Domain\Model;
 readonly class Issue
 {
     /**
-     * @param array<Journal>    $journals
+     * @param array<Comment>    $comments
      * @param array<Attachment> $attachments
      */
     public function __construct(
@@ -20,9 +20,9 @@ readonly class Issue
         public Project $project,
         public string $status,
         public ?string $assignee = null,
-        public ?string $tracker = null,
+        public ?string $type = null,
         public ?string $priority = null,
-        public array $journals = [],
+        public array $comments = [],
         public array $attachments = [],
     ) {
     }

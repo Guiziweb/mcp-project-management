@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Twig\Components;
+namespace App\Infrastructure\Web\Components;
 
-use App\Form\ProviderCredentialsType;
+use App\Infrastructure\Web\Form\ProviderCredentialsType;
 use App\Infrastructure\Security\OAuthAuthorizationCodeStore;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;

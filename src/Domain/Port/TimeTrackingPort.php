@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Provider;
+namespace App\Domain\Port;
 
 use App\Domain\Model\Activity;
 use App\Domain\Model\Issue;
@@ -11,14 +11,14 @@ use App\Domain\Model\TimeEntry;
 use App\Domain\Model\User;
 
 /**
- * Interface for time tracking providers (Redmine, Jira, GitLab, etc.).
+ * Port for time tracking adapters (Redmine, Jira, GitLab, etc.).
  */
-interface TimeTrackingProviderInterface
+interface TimeTrackingPort
 {
     /**
-     * Get provider capabilities.
+     * Get adapter capabilities.
      */
-    public function getCapabilities(): ProviderCapabilities;
+    public function getCapabilities(): PortCapabilities;
 
     /**
      * Get current authenticated user.

@@ -21,9 +21,9 @@ services:
         resource: '../src/Tools/'
         tags: ['mcp.tool']
 
-    # Default time tracking provider (current user's provider)
-    App\Domain\Provider\TimeTrackingProviderInterface:
-        alias: App\Infrastructure\Provider\CurrentUserProviderService
+    # Default time tracking adapter (current user's adapter)
+    App\Domain\Port\TimeTrackingPort:
+        alias: App\Infrastructure\Adapter\CurrentUserService
 
     # JWT token validator (with encryption for embedded credentials)
     App\Infrastructure\Security\JwtTokenValidator:

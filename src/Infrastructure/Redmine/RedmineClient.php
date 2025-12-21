@@ -8,9 +8,9 @@ use Psr\Log\LoggerInterface;
 use Redmine\Client\NativeCurlClient;
 
 /**
- * Service wrapper for Redmine API.
+ * Client for Redmine API.
  */
-class RedmineService
+class RedmineClient
 {
     public function __construct(
         private readonly string $redmineUrl,

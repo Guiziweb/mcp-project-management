@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
@@ -23,7 +23,7 @@ final class GetAttachmentTool
     ];
 
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -40,7 +40,7 @@ final class GetAttachmentTool
     {
         try {
             // Get attachment metadata
-            $attachment = $this->provider->getAttachment($attachment_id);
+            $attachment = $this->adapter->getAttachment($attachment_id);
 
             $filename = $attachment['filename'];
             $contentType = $attachment['content_type'];
@@ -49,7 +49,7 @@ final class GetAttachmentTool
             // Check if it's an image
             if (in_array($contentType, self::SUPPORTED_IMAGE_TYPES, true)) {
                 // Download the image content
-                $content = $this->provider->downloadAttachment($attachment_id);
+                $content = $this->adapter->downloadAttachment($attachment_id);
 
                 return CallToolResult::success([
                     new TextContent(sprintf(

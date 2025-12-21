@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Redmine\Normalizer;
 
 use App\Domain\Model\Attachment;
+use App\Domain\Model\Comment;
 use App\Domain\Model\Issue;
-use App\Domain\Model\Journal;
 use App\Domain\Model\Project;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
@@ -34,13 +34,13 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             $context
         );
 
-        // Denormalize journals if present
-        $journals = [];
+        // Denormalize comments (journals in Redmine API) if present
+        $comments = [];
         if (isset($issue['journals']) && is_array($issue['journals'])) {
-            foreach ($issue['journals'] as $journalData) {
-                $journals[] = $this->denormalizer->denormalize(
-                    $journalData,
-                    Journal::class,
+            foreach ($issue['journals'] as $commentData) {
+                $comments[] = $this->denormalizer->denormalize(
+                    $commentData,
+                    Comment::class,
                     $format,
                     $context
                 );
@@ -67,9 +67,9 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             project: $project,
             status: (string) ($issue['status']['name'] ?? ''),
             assignee: isset($issue['assigned_to']['name']) ? (string) $issue['assigned_to']['name'] : null,
-            tracker: isset($issue['tracker']['name']) ? (string) $issue['tracker']['name'] : null,
+            type: isset($issue['tracker']['name']) ? (string) $issue['tracker']['name'] : null,
             priority: isset($issue['priority']['name']) ? (string) $issue['priority']['name'] : null,
-            journals: $journals,
+            comments: $comments,
             attachments: $attachments,
         );
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class UpdateTimeEntryTool
 {
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -47,7 +47,7 @@ final class UpdateTimeEntryTool
                 ];
             }
 
-            $this->provider->updateTimeEntry(
+            $this->adapter->updateTimeEntry(
                 timeEntryId: $time_entry_id,
                 hours: $hours,
                 comment: $comment,

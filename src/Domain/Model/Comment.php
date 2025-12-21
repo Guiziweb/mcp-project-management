@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Model;
 
 /**
- * Represents a journal entry (comment/change) on an issue.
+ * Represents a comment on an issue.
  */
-readonly class Journal
+readonly class Comment
 {
     /**
      * @param array<Attachment> $attachments

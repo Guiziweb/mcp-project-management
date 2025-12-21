@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Provider;
+namespace App\Domain\Port;
 
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
- * Interface for providers that expose their metadata.
+ * Interface for adapters that expose their metadata.
  *
- * Used for dynamic form building and provider discovery.
+ * Used for dynamic form building and adapter discovery.
  */
-#[AutoconfigureTag('app.provider')]
-interface ProviderMetadataInterface
+#[AutoconfigureTag('app.adapter')]
+interface PortMetadataInterface
 {
     /**
-     * Get the provider key (e.g., 'redmine', 'jira').
+     * Get the adapter key (e.g., 'redmine', 'jira').
      */
-    public static function getProviderKey(): string;
+    public static function getAdapterKey(): string;
 
     /**
      * Get the display label (e.g., 'Redmine', 'Jira Cloud').
      */
-    public static function getProviderLabel(): string;
+    public static function getAdapterLabel(): string;
 
     /**
      * Get the credential fields required by this provider.

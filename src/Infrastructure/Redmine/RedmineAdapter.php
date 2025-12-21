@@ -9,26 +9,26 @@ use App\Domain\Model\Issue;
 use App\Domain\Model\Project;
 use App\Domain\Model\TimeEntry;
 use App\Domain\Model\User;
-use App\Domain\Provider\ProviderCapabilities;
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\PortCapabilities;
+use App\Domain\Port\TimeTrackingPort;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
- * Redmine implementation of the time tracking provider.
+ * Redmine adapter for the time tracking port.
  */
-class RedmineProvider implements TimeTrackingProviderInterface
+class RedmineAdapter implements TimeTrackingPort
 {
     private ?User $currentUser = null;
 
     public function __construct(
-        private readonly RedmineService $redmineService,
+        private readonly RedmineClient $redmineClient,
         private readonly DenormalizerInterface $serializer,
     ) {
     }
 
-    public function getCapabilities(): ProviderCapabilities
+    public function getCapabilities(): PortCapabilities
     {
-        return new ProviderCapabilities(
+        return new PortCapabilities(
             name: 'Redmine',
             requiresActivity: true,
             supportsProjectHierarchy: true,
@@ -40,7 +40,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
     public function getCurrentUser(): User
     {
         if (null === $this->currentUser) {
-            $data = $this->redmineService->getMyAccount();
+            $data = $this->redmineClient->getMyAccount();
             $this->currentUser = $this->serializer->denormalize(
                 $data,
                 User::class,
@@ -54,7 +54,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
 
     public function getProjects(): array
     {
-        $data = $this->redmineService->getMyProjects();
+        $data = $this->redmineClient->getMyProjects();
         $projects = $data['projects'] ?? [];
 
         return array_map(
@@ -82,7 +82,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
             $params['project_id'] = $projectId;
         }
 
-        $data = $this->redmineService->getIssues($params);
+        $data = $this->redmineClient->getIssues($params);
         $issues = $data['issues'] ?? [];
 
         return array_map(
@@ -98,7 +98,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
 
     public function getIssue(int $issueId): Issue
     {
-        $data = $this->redmineService->getIssue($issueId, [
+        $data = $this->redmineClient->getIssue($issueId, [
             'include' => 'journals,attachments',
         ]);
 
@@ -112,7 +112,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
 
     public function getActivities(): array
     {
-        $data = $this->redmineService->getTimeEntryActivities();
+        $data = $this->redmineClient->getTimeEntryActivities();
         $activities = $data['time_entry_activities'] ?? [];
 
         return array_map(
@@ -142,7 +142,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
 
         $spentOn = $spentAt->format('Y-m-d');
 
-        $result = $this->redmineService->logTime(
+        $result = $this->redmineClient->logTime(
             $issueId,
             $hours,
             $comment,
@@ -188,7 +188,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
             'limit' => 1000,
         ];
 
-        $data = $this->redmineService->getTimeEntries($params);
+        $data = $this->redmineClient->getTimeEntries($params);
         $entries = $data['time_entries'] ?? [];
 
         return array_map(
@@ -209,7 +209,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
      */
     public function getAttachment(int $attachmentId): array
     {
-        $data = $this->redmineService->getAttachment($attachmentId);
+        $data = $this->redmineClient->getAttachment($attachmentId);
         $attachment = $data['attachment'] ?? $data;
 
         return [
@@ -227,7 +227,7 @@ class RedmineProvider implements TimeTrackingProviderInterface
      */
     public function downloadAttachment(int $attachmentId): string
     {
-        return $this->redmineService->downloadAttachment($attachmentId);
+        return $this->redmineClient->downloadAttachment($attachmentId);
     }
 
     public function updateTimeEntry(
@@ -237,11 +237,11 @@ class RedmineProvider implements TimeTrackingProviderInterface
         ?int $activityId = null,
         ?string $spentOn = null,
     ): void {
-        $this->redmineService->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
+        $this->redmineClient->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
     }
 
     public function deleteTimeEntry(int $timeEntryId): void
     {
-        $this->redmineService->deleteTimeEntry($timeEntryId);
+        $this->redmineClient->deleteTimeEntry($timeEntryId);
     }
 }

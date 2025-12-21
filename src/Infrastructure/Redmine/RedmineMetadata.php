@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine;
 
-use App\Domain\Provider\ProviderMetadataInterface;
+use App\Domain\Port\PortMetadataInterface;
 
 /**
- * Metadata for the Redmine provider.
+ * Metadata for the Redmine adapter.
  */
-final class RedmineMetadata implements ProviderMetadataInterface
+final class RedmineMetadata implements PortMetadataInterface
 {
-    public static function getProviderKey(): string
+    public static function getAdapterKey(): string
     {
         return 'redmine';
     }
 
-    public static function getProviderLabel(): string
+    public static function getAdapterLabel(): string
     {
         return 'Redmine';
     }

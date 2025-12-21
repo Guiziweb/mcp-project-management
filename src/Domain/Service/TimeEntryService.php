@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Service;
 
 use App\Domain\Model\TimeEntry;
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 
 /**
  * Domain service for time entry management with business rules.
@@ -13,7 +13,7 @@ use App\Domain\Provider\TimeTrackingProviderInterface;
 class TimeEntryService
 {
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -37,7 +37,7 @@ class TimeEntryService
         }
 
         // Get provider capabilities for validation
-        $capabilities = $this->provider->getCapabilities();
+        $capabilities = $this->adapter->getCapabilities();
 
         // Validate activity requirement
         if ($capabilities->requiresActivity && !isset($metadata['activity_id'])) {
@@ -47,7 +47,7 @@ class TimeEntryService
         // Convert hours to seconds
         $seconds = (int) ($hours * 3600);
 
-        return $this->provider->logTime(
+        return $this->adapter->logTime(
             issueId: $issueId,
             seconds: $seconds,
             comment: $comment,
@@ -70,7 +70,7 @@ class TimeEntryService
         \DateTimeInterface $to,
         ?int $userId = null,
     ): array {
-        return $this->provider->getTimeEntries($from, $to, $userId);
+        return $this->adapter->getTimeEntries($from, $to, $userId);
     }
 
     /**
@@ -87,7 +87,7 @@ class TimeEntryService
         \DateTimeInterface $to,
         ?int $userId = null,
     ): array {
-        $entries = $this->provider->getTimeEntries($from, $to, $userId);
+        $entries = $this->adapter->getTimeEntries($from, $to, $userId);
 
         $byDay = [];
         foreach ($entries as $entry) {
@@ -124,7 +124,7 @@ class TimeEntryService
         \DateTimeInterface $to,
         ?int $userId = null,
     ): array {
-        $entries = $this->provider->getTimeEntries($from, $to, $userId);
+        $entries = $this->adapter->getTimeEntries($from, $to, $userId);
 
         $byProject = [];
         foreach ($entries as $entry) {

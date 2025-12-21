@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Provider;
+namespace App\Domain\Port;
 
 /**
- * Describes the capabilities and requirements of a time tracking provider.
+ * Describes the capabilities and requirements of a time tracking adapter.
  */
-readonly class ProviderCapabilities
+readonly class PortCapabilities
 {
     public function __construct(
         public string $name,

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Form;
+namespace App\Infrastructure\Web\Form;
 
-use App\Infrastructure\Provider\ProviderRegistry;
+use App\Infrastructure\Adapter\AdapterRegistry;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -19,13 +19,13 @@ use Symfony\Component\Validator\Constraints\Url;
 class ProviderCredentialsType extends AbstractType
 {
     public function __construct(
-        private readonly ProviderRegistry $providerRegistry,
+        private readonly AdapterRegistry $adapterRegistry,
     ) {
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $choices = $this->providerRegistry->getFormChoices();
+        $choices = $this->adapterRegistry->getFormChoices();
         $selectedProvider = $options['selected_provider'] ?? array_values($choices)[0] ?? 'redmine';
 
         $builder->add('provider', ChoiceType::class, [
@@ -36,7 +36,7 @@ class ProviderCredentialsType extends AbstractType
         ]);
 
         // Add credential fields based on selected provider
-        $fields = $this->providerRegistry->getCredentialFields($selectedProvider) ?? [];
+        $fields = $this->adapterRegistry->getCredentialFields($selectedProvider) ?? [];
 
         foreach ($fields as $fieldName => $fieldConfig) {
             $type = $this->getFormType($fieldConfig['type']);

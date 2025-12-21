@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Jira;
 
-use App\Domain\Provider\ProviderMetadataInterface;
+use App\Domain\Port\PortMetadataInterface;
 
 /**
- * Metadata for the Jira provider.
+ * Metadata for the Jira adapter.
  */
-final class JiraMetadata implements ProviderMetadataInterface
+final class JiraMetadata implements PortMetadataInterface
 {
-    public static function getProviderKey(): string
+    public static function getAdapterKey(): string
     {
         return 'jira';
     }
 
-    public static function getProviderLabel(): string
+    public static function getAdapterLabel(): string
     {
         return 'Jira';
     }

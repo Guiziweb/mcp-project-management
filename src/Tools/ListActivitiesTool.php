@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final readonly class ListActivitiesTool
 {
     public function __construct(
-        private TimeTrackingProviderInterface $provider,
+        private TimeTrackingPort $adapter,
     ) {
     }
 
@@ -25,7 +25,7 @@ final readonly class ListActivitiesTool
     public function listActivities(): array
     {
         try {
-            $activities = $this->provider->getActivities();
+            $activities = $this->adapter->getActivities();
 
             return [
                 'success' => true,

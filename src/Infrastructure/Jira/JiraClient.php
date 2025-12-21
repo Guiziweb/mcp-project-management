@@ -6,16 +6,15 @@ namespace App\Infrastructure\Jira;
 
 use JiraCloud\ADF\AtlassianDocumentFormat;
 use JiraCloud\Configuration\ArrayConfiguration;
-use JiraCloud\Issue\Attachment;
 use JiraCloud\Issue\IssueService;
 use JiraCloud\Issue\Worklog;
 use JiraCloud\Project\ProjectService;
 use JiraCloud\User\UserService;
 
 /**
- * Service wrapper for Jira Cloud API.
+ * Client for Jira Cloud API.
  */
-class JiraService
+class JiraClient
 {
     private ArrayConfiguration $configuration;
 
@@ -105,7 +104,7 @@ class JiraService
     }
 
     /**
-     * Get a specific issue.
+     * Get a specific issue with full details.
      *
      * @return array<string, mixed>
      */
@@ -114,10 +113,35 @@ class JiraService
         $issueService = new IssueService($this->configuration);
         $issue = $issueService->get($issueIdOrKey, ['expand' => 'renderedFields']);
 
+        // Map attachments to raw array format for normalizer
         $attachments = [];
         if (isset($issue->fields->attachment)) {
             foreach ($issue->fields->attachment as $attachment) {
-                $attachments[] = $this->mapAttachment($attachment);
+                $attachments[] = [
+                    'id' => (int) $attachment->id,
+                    'filename' => $attachment->filename ?? '',
+                    'size' => $attachment->size ?? 0,
+                    'mimeType' => $attachment->mimeType ?? 'application/octet-stream',
+                    'content' => $attachment->content ?? null,
+                    'author' => isset($attachment->author) ? [
+                        'displayName' => $attachment->author->displayName ?? null,
+                        'accountId' => $attachment->author->accountId ?? null,
+                    ] : null,
+                    'created' => $attachment->created ?? null,
+                ];
+            }
+        }
+
+        // Map comments to raw array format for normalizer
+        $comments = [];
+        if (isset($issue->renderedFields['comment']['comments'])) {
+            foreach ($issue->renderedFields['comment']['comments'] as $comment) {
+                $comments[] = [
+                    'id' => (int) ($comment['id'] ?? 0),
+                    'renderedBody' => $comment['renderedBody'] ?? '',
+                    'author' => $comment['author'] ?? null,
+                    'created' => $comment['created'] ?? null,
+                ];
             }
         }
 
@@ -135,7 +159,18 @@ class JiraService
                 'key' => $issue->fields->project->key ?? '',
                 'name' => $issue->fields->project->name ?? '',
             ],
+            'assignee' => isset($issue->fields->assignee) ? [
+                'displayName' => $issue->fields->assignee->displayName ?? null,
+                'accountId' => $issue->fields->assignee->accountId ?? null,
+            ] : null,
+            'issuetype' => isset($issue->fields->issuetype) ? [
+                'name' => $issue->fields->issuetype->name ?? null,
+            ] : null,
+            'priority' => isset($issue->fields->priority) ? [
+                'name' => $issue->fields->priority->name,
+            ] : null,
             'attachments' => $attachments,
+            'comments' => $comments,
         ];
     }
 
@@ -231,14 +266,25 @@ class JiraService
     /**
      * Get attachment metadata.
      *
-     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
+     * @return array<string, mixed>
      */
     public function getAttachment(int $attachmentId): array
     {
         $attachmentService = new JiraAttachmentClient($this->configuration);
         $attachment = $attachmentService->get($attachmentId);
 
-        return $this->mapAttachment($attachment);
+        return [
+            'id' => (int) $attachment->id,
+            'filename' => $attachment->filename ?? '',
+            'size' => $attachment->size ?? 0,
+            'mimeType' => $attachment->mimeType ?? 'application/octet-stream',
+            'content' => $attachment->content ?? null,
+            'author' => isset($attachment->author) ? [
+                'displayName' => $attachment->author->displayName ?? null,
+                'accountId' => $attachment->author->accountId ?? null,
+            ] : null,
+            'created' => $attachment->created ?? null,
+        ];
     }
 
     /**
@@ -251,22 +297,5 @@ class JiraService
         $attachmentService = new JiraAttachmentClient($this->configuration);
 
         return $attachmentService->downloadContent($attachmentId);
-    }
-
-    /**
-     * Map Jira Attachment to array.
-     *
-     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
-     */
-    private function mapAttachment(Attachment $attachment): array
-    {
-        return [
-            'id' => (int) $attachment->id,
-            'filename' => $attachment->filename ?? '',
-            'filesize' => $attachment->size ?? 0,
-            'content_type' => $attachment->mimeType ?? 'application/octet-stream',
-            'description' => null, // Jira attachments don't have descriptions
-            'author' => $attachment->author->displayName ?? null,
-        ];
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class ListIssuesTool
 {
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -33,7 +33,7 @@ final class ListIssuesTool
     public function listIssues(?int $project_id = null, int $limit = 25, ?int $user_id = null): array
     {
         try {
-            $issues = $this->provider->getIssues($project_id, $limit, $user_id);
+            $issues = $this->adapter->getIssues($project_id, $limit, $user_id);
 
             return [
                 'success' => true,
@@ -48,7 +48,7 @@ final class ListIssuesTool
                             'name' => $issue->project->name,
                         ],
                         'assignee' => $issue->assignee,
-                        'tracker' => $issue->tracker,
+                        'type' => $issue->type,
                         'priority' => $issue->priority,
                     ],
                     $issues

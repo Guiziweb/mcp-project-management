@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Provider\TimeTrackingProviderInterface;
+use App\Domain\Port\TimeTrackingPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class DeleteTimeEntryTool
 {
     public function __construct(
-        private readonly TimeTrackingProviderInterface $provider,
+        private readonly TimeTrackingPort $adapter,
     ) {
     }
 
@@ -30,7 +30,7 @@ final class DeleteTimeEntryTool
         int $time_entry_id,
     ): array {
         try {
-            $this->provider->deleteTimeEntry($time_entry_id);
+            $this->adapter->deleteTimeEntry($time_entry_id);
 
             return [
                 'success' => true,

@@ -9,14 +9,18 @@ use App\Domain\Model\Issue;
 use App\Domain\Model\Project;
 use App\Domain\Model\TimeEntry;
 use App\Domain\Model\User;
-use App\Domain\Port\PortCapabilities;
-use App\Domain\Port\TimeTrackingPort;
+use App\Domain\Port\ActivityPort;
+use App\Domain\Port\AttachmentPort;
+use App\Domain\Port\IssuePort;
+use App\Domain\Port\ProjectPort;
+use App\Domain\Port\TimeEntryPort;
+use App\Domain\Port\UserPort;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
- * Redmine adapter for the time tracking port.
+ * Redmine adapter implementing all ports.
  */
-class RedmineAdapter implements TimeTrackingPort
+class RedmineAdapter implements UserPort, ProjectPort, IssuePort, TimeEntryPort, ActivityPort, AttachmentPort
 {
     private ?User $currentUser = null;
 
@@ -24,17 +28,6 @@ class RedmineAdapter implements TimeTrackingPort
         private readonly RedmineClient $redmineClient,
         private readonly DenormalizerInterface $serializer,
     ) {
-    }
-
-    public function getCapabilities(): PortCapabilities
-    {
-        return new PortCapabilities(
-            name: 'Redmine',
-            requiresActivity: true,
-            supportsProjectHierarchy: true,
-            supportsTags: false,
-            maxDailyHours: 24,
-        );
     }
 
     public function getCurrentUser(): User
@@ -126,6 +119,11 @@ class RedmineAdapter implements TimeTrackingPort
         );
     }
 
+    public function requiresActivity(): bool
+    {
+        return true;
+    }
+
     public function logTime(
         int $issueId,
         int $seconds,
@@ -136,13 +134,13 @@ class RedmineAdapter implements TimeTrackingPort
         $hours = $seconds / 3600;
         $activityId = $metadata['activity_id'] ?? null;
 
-        if (null === $activityId && $this->getCapabilities()->requiresActivity) {
+        if (null === $activityId) {
             throw new \InvalidArgumentException('Activity ID is required for Redmine');
         }
 
         $spentOn = $spentAt->format('Y-m-d');
 
-        $result = $this->redmineClient->logTime(
+        $this->redmineClient->logTime(
             $issueId,
             $hours,
             $comment,
@@ -154,14 +152,11 @@ class RedmineAdapter implements TimeTrackingPort
         $issue = $this->getIssue($issueId);
         $user = $this->getCurrentUser();
 
-        $activity = null;
-        if (null !== $activityId) {
-            $activities = $this->getActivities();
-            $activity = array_values(array_filter(
-                $activities,
-                fn (Activity $a) => $a->id === $activityId
-            ))[0] ?? null;
-        }
+        $activities = $this->getActivities();
+        $activity = array_values(array_filter(
+            $activities,
+            fn (Activity $a) => $a->id === $activityId
+        ))[0] ?? null;
 
         return new TimeEntry(
             id: 0, // We don't have the actual ID
@@ -202,11 +197,6 @@ class RedmineAdapter implements TimeTrackingPort
         );
     }
 
-    /**
-     * Get attachment metadata.
-     *
-     * @return array{id: int, filename: string, filesize: int, content_type: string, description: ?string, author: ?string}
-     */
     public function getAttachment(int $attachmentId): array
     {
         $data = $this->redmineClient->getAttachment($attachmentId);
@@ -222,9 +212,6 @@ class RedmineAdapter implements TimeTrackingPort
         ];
     }
 
-    /**
-     * Download attachment content.
-     */
     public function downloadAttachment(int $attachmentId): string
     {
         return $this->redmineClient->downloadAttachment($attachmentId);

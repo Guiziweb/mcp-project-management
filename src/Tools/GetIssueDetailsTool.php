@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\TimeTrackingPort;
+use App\Domain\Port\IssuePort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class GetIssueDetailsTool
 {
     public function __construct(
-        private readonly TimeTrackingPort $adapter,
+        private readonly IssuePort $adapter,
     ) {
     }
 

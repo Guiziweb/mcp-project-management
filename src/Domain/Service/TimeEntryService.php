@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Service;
 
 use App\Domain\Model\TimeEntry;
-use App\Domain\Port\TimeTrackingPort;
+use App\Domain\Port\TimeEntryPort;
 
 /**
  * Domain service for time entry management with business rules.
@@ -13,7 +13,7 @@ use App\Domain\Port\TimeTrackingPort;
 class TimeEntryService
 {
     public function __construct(
-        private readonly TimeTrackingPort $adapter,
+        private readonly TimeEntryPort $adapter,
     ) {
     }
 
@@ -36,12 +36,9 @@ class TimeEntryService
             throw new \InvalidArgumentException('Hours must be greater than 0');
         }
 
-        // Get provider capabilities for validation
-        $capabilities = $this->adapter->getCapabilities();
-
         // Validate activity requirement
-        if ($capabilities->requiresActivity && !isset($metadata['activity_id'])) {
-            throw new \InvalidArgumentException(sprintf('Provider "%s" requires an activity_id in metadata', $capabilities->name));
+        if ($this->adapter->requiresActivity() && !isset($metadata['activity_id'])) {
+            throw new \InvalidArgumentException('This provider requires an activity_id in metadata');
         }
 
         // Convert hours to seconds

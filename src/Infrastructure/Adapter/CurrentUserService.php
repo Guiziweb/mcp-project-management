@@ -4,22 +4,36 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Adapter;
 
-use App\Domain\Port\PortCapabilities;
-use App\Domain\Port\TimeTrackingPort;
-use App\Infrastructure\Security\User;
+use App\Domain\Model\Issue;
+use App\Domain\Model\TimeEntry;
+use App\Domain\Model\User;
+use App\Domain\Port\ActivityPort;
+use App\Domain\Port\AttachmentPort;
+use App\Domain\Port\IssuePort;
+use App\Domain\Port\ProjectPort;
+use App\Domain\Port\TimeEntryPort;
+use App\Domain\Port\UserPort;
+use App\Infrastructure\Security\User as SecurityUser;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
- * Provides the TimeTrackingPort for the current authenticated user.
+ * Proxy service providing ports for the current authenticated user.
  *
  * This service acts as a proxy that delegates to the user-specific adapter
  * based on the current authenticated user from Symfony Security.
  *
  * This allows MCP Tools to be registered once with dependency injection,
- * while still serving different users with their own credentials (Redmine, Jira, etc.).
+ * while still serving different users with their own credentials.
  */
-final readonly class CurrentUserService implements TimeTrackingPort
+#[AsAlias(UserPort::class)]
+#[AsAlias(ProjectPort::class)]
+#[AsAlias(IssuePort::class)]
+#[AsAlias(TimeEntryPort::class)]
+#[AsAlias(ActivityPort::class)]
+#[AsAlias(AttachmentPort::class)]
+final readonly class CurrentUserService implements UserPort, ProjectPort, IssuePort, TimeEntryPort, ActivityPort, AttachmentPort
 {
     public function __construct(
         private Security $security,
@@ -30,11 +44,11 @@ final readonly class CurrentUserService implements TimeTrackingPort
     /**
      * Get the adapter instance for the current user.
      */
-    private function getCurrentAdapter(): TimeTrackingPort
+    private function getCurrentAdapter(): UserPort&ProjectPort&IssuePort&TimeEntryPort&AttachmentPort
     {
         $user = $this->security->getUser();
 
-        if (!$user instanceof User) {
+        if (!$user instanceof SecurityUser) {
             throw new \RuntimeException('No authenticated user found. Ensure Symfony Security is configured properly.');
         }
 
@@ -52,18 +66,12 @@ final readonly class CurrentUserService implements TimeTrackingPort
             return; // Querying own data is always allowed
         }
 
-        // Require ROLE_ADMIN for cross-user queries
         if (!$this->security->isGranted('ROLE_ADMIN')) {
             throw new AccessDeniedException('Access denied: Only administrators can specify a user_id parameter');
         }
     }
 
-    public function getCapabilities(): PortCapabilities
-    {
-        return $this->getCurrentAdapter()->getCapabilities();
-    }
-
-    public function getCurrentUser(): \App\Domain\Model\User
+    public function getCurrentUser(): User
     {
         return $this->getCurrentAdapter()->getCurrentUser();
     }
@@ -80,14 +88,25 @@ final readonly class CurrentUserService implements TimeTrackingPort
         return $this->getCurrentAdapter()->getIssues($projectId, $limit, $userId);
     }
 
-    public function getIssue(int $issueId): \App\Domain\Model\Issue
+    public function getIssue(int $issueId): Issue
     {
         return $this->getCurrentAdapter()->getIssue($issueId);
     }
 
     public function getActivities(): array
     {
-        return $this->getCurrentAdapter()->getActivities();
+        $adapter = $this->getCurrentAdapter();
+
+        if ($adapter instanceof ActivityPort) {
+            return $adapter->getActivities();
+        }
+
+        return [];
+    }
+
+    public function requiresActivity(): bool
+    {
+        return $this->getCurrentAdapter()->requiresActivity();
     }
 
     public function logTime(
@@ -96,7 +115,7 @@ final readonly class CurrentUserService implements TimeTrackingPort
         string $comment,
         \DateTimeInterface $spentAt,
         array $metadata = [],
-    ): \App\Domain\Model\TimeEntry {
+    ): TimeEntry {
         return $this->getCurrentAdapter()->logTime($issueId, $seconds, $comment, $spentAt, $metadata);
     }
 

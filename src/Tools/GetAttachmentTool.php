@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\TimeTrackingPort;
+use App\Domain\Port\AttachmentPort;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
@@ -23,7 +23,7 @@ final class GetAttachmentTool
     ];
 
     public function __construct(
-        private readonly TimeTrackingPort $adapter,
+        private readonly AttachmentPort $adapter,
     ) {
     }
 

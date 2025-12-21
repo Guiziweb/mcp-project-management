@@ -21,10 +21,6 @@ services:
         resource: '../src/Tools/'
         tags: ['mcp.tool']
 
-    # Default time tracking adapter (current user's adapter)
-    App\Domain\Port\TimeTrackingPort:
-        alias: App\Infrastructure\Adapter\CurrentUserService
-
     # JWT token validator (with encryption for embedded credentials)
     App\Infrastructure\Security\JwtTokenValidator:
         arguments:

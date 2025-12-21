@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\TimeTrackingPort;
+use App\Domain\Port\TimeEntryPort;
 use App\Domain\Service\TimeEntryService;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -14,7 +14,7 @@ final class LogTimeTool
 {
     public function __construct(
         private readonly TimeEntryService $timeEntryService,
-        private readonly TimeTrackingPort $adapter,
+        private readonly TimeEntryPort $adapter,
     ) {
     }
 
@@ -41,16 +41,11 @@ final class LogTimeTool
         ?string $spent_on = null,
     ): array {
         try {
-            $capabilities = $this->adapter->getCapabilities();
-
             // Validate activity requirement
-            if ($capabilities->requiresActivity && null === $activity_id) {
+            if ($this->adapter->requiresActivity() && null === $activity_id) {
                 return [
                     'success' => false,
-                    'error' => sprintf(
-                        'Provider "%s" requires an activity_id. Please use list_activities tool to get valid IDs.',
-                        $capabilities->name
-                    ),
+                    'error' => 'This provider requires an activity_id. Please use list_activities tool to get valid IDs.',
                 ];
             }
 
@@ -85,7 +80,6 @@ final class LogTimeTool
                 ],
             ];
         } catch (\Throwable $e) {
-            // Return error with detailed message so AI can see it and self-correct
             return [
                 'success' => false,
                 'error' => $e->getMessage(),

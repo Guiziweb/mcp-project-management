@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Web\Components;
 
-use App\Infrastructure\Web\Form\ProviderCredentialsType;
 use App\Infrastructure\Security\OAuthAuthorizationCodeStore;
+use App\Infrastructure\Web\Form\ProviderCredentialsType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -65,12 +65,16 @@ final class ProviderCredentialsForm extends AbstractController
 
         // Generate authorization code with credentials
         $authCode = bin2hex(random_bytes(32));
+
+        // Get provider URL (some providers like Monday.com have fixed URLs)
+        $providerUrl = $data['url'] ?? '';
+
         $authData = [
             'user_id' => $session->get('google_user_email'),
             'client_id' => $session->get('oauth_client_id'),
             'redirect_uri' => $session->get('oauth_redirect_uri'),
             'provider' => $data['provider'],
-            'provider_url' => rtrim($data['url'], '/'),
+            'provider_url' => rtrim($providerUrl, '/'),
             'provider_api_key' => $data['api_key'],
         ];
 

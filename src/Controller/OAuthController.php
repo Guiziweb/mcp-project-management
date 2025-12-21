@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Infrastructure\Web\Form\ProviderCredentialsType;
 use App\Infrastructure\Security\GoogleAuthService;
 use App\Infrastructure\Security\JwtTokenValidator;
 use App\Infrastructure\Security\OAuthAuthorizationCodeStore;
+use App\Infrastructure\Web\Form\ProviderCredentialsType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

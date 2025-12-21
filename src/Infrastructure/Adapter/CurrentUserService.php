@@ -12,6 +12,8 @@ use App\Domain\Port\AttachmentPort;
 use App\Domain\Port\IssuePort;
 use App\Domain\Port\ProjectPort;
 use App\Domain\Port\TimeEntryPort;
+use App\Domain\Port\TimeEntryReadPort;
+use App\Domain\Port\TimeEntryWritePort;
 use App\Domain\Port\UserPort;
 use App\Infrastructure\Security\User as SecurityUser;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -26,11 +28,16 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  *
  * This allows MCP Tools to be registered once with dependency injection,
  * while still serving different users with their own credentials.
+ *
+ * Note: TimeEntryWritePort and ActivityPort are optional capabilities.
+ * Use supportsTimeEntryWrite() and supportsActivity() to check availability.
  */
 #[AsAlias(UserPort::class)]
 #[AsAlias(ProjectPort::class)]
 #[AsAlias(IssuePort::class)]
 #[AsAlias(TimeEntryPort::class)]
+#[AsAlias(TimeEntryReadPort::class)]
+#[AsAlias(TimeEntryWritePort::class)]
 #[AsAlias(ActivityPort::class)]
 #[AsAlias(AttachmentPort::class)]
 final readonly class CurrentUserService implements UserPort, ProjectPort, IssuePort, TimeEntryPort, ActivityPort, AttachmentPort
@@ -44,7 +51,7 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
     /**
      * Get the adapter instance for the current user.
      */
-    private function getCurrentAdapter(): UserPort&ProjectPort&IssuePort&TimeEntryPort&AttachmentPort
+    private function getCurrentAdapter(): UserPort&ProjectPort&IssuePort&TimeEntryReadPort&AttachmentPort
     {
         $user = $this->security->getUser();
 
@@ -53,6 +60,22 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
         }
 
         return $this->adapterFactory->createForUser($user->getCredential());
+    }
+
+    /**
+     * Check if current adapter supports writing time entries.
+     */
+    public function supportsTimeEntryWrite(): bool
+    {
+        return $this->getCurrentAdapter() instanceof TimeEntryWritePort;
+    }
+
+    /**
+     * Check if current adapter supports activities.
+     */
+    public function supportsActivity(): bool
+    {
+        return $this->getCurrentAdapter() instanceof ActivityPort;
     }
 
     /**
@@ -106,7 +129,13 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
 
     public function requiresActivity(): bool
     {
-        return $this->getCurrentAdapter()->requiresActivity();
+        $adapter = $this->getCurrentAdapter();
+
+        if ($adapter instanceof TimeEntryWritePort) {
+            return $adapter->requiresActivity();
+        }
+
+        return false;
     }
 
     public function logTime(
@@ -116,7 +145,13 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
         \DateTimeInterface $spentAt,
         array $metadata = [],
     ): TimeEntry {
-        return $this->getCurrentAdapter()->logTime($issueId, $seconds, $comment, $spentAt, $metadata);
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof TimeEntryWritePort) {
+            throw new \RuntimeException('This provider does not support logging time entries.');
+        }
+
+        return $adapter->logTime($issueId, $seconds, $comment, $spentAt, $metadata);
     }
 
     public function getTimeEntries(
@@ -146,11 +181,23 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
         ?int $activityId = null,
         ?string $spentOn = null,
     ): void {
-        $this->getCurrentAdapter()->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof TimeEntryWritePort) {
+            throw new \RuntimeException('This provider does not support updating time entries.');
+        }
+
+        $adapter->updateTimeEntry($timeEntryId, $hours, $comment, $activityId, $spentOn);
     }
 
     public function deleteTimeEntry(int $timeEntryId): void
     {
-        $this->getCurrentAdapter()->deleteTimeEntry($timeEntryId);
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof TimeEntryWritePort) {
+            throw new \RuntimeException('This provider does not support deleting time entries.');
+        }
+
+        $adapter->deleteTimeEntry($timeEntryId);
     }
 }

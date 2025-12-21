@@ -34,7 +34,7 @@ class CreateBotCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('provider', null, InputOption::VALUE_REQUIRED, 'Provider type: redmine or jira', 'redmine')
+            ->addOption('provider', null, InputOption::VALUE_REQUIRED, 'Provider type: redmine, jira, or monday', 'redmine')
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Bot user email (e.g., bot@admin.com)')
             ->addOption('url', null, InputOption::VALUE_REQUIRED, 'Provider URL (Redmine URL or Jira host)')
             ->addOption('api-key', null, InputOption::VALUE_REQUIRED, 'API key/token')
@@ -54,14 +54,28 @@ class CreateBotCommand extends Command
         $providerEmail = $input->getOption('provider-email');
         $jwtExpiry = $input->getOption('jwt-expiry');
 
-        if (!$email || !$url || !$apiKey) {
-            $io->error('Required options: --email, --url, --api-key');
+        $validProviders = [
+            UserCredential::PROVIDER_REDMINE,
+            UserCredential::PROVIDER_JIRA,
+            UserCredential::PROVIDER_MONDAY,
+        ];
+
+        if (!in_array($provider, $validProviders, true)) {
+            $io->error('Provider must be "redmine", "jira", or "monday"');
 
             return Command::FAILURE;
         }
 
-        if (!in_array($provider, [UserCredential::PROVIDER_REDMINE, UserCredential::PROVIDER_JIRA], true)) {
-            $io->error('Provider must be "redmine" or "jira"');
+        // Validate required options per provider
+        if (!$email || !$apiKey) {
+            $io->error('Required options: --email, --api-key');
+
+            return Command::FAILURE;
+        }
+
+        // Monday doesn't need URL (API is always api.monday.com)
+        if (UserCredential::PROVIDER_MONDAY !== $provider && !$url) {
+            $io->error('--url is required for Redmine and Jira providers');
 
             return Command::FAILURE;
         }
@@ -70,6 +84,11 @@ class CreateBotCommand extends Command
             $io->error('Jira provider requires --provider-email option');
 
             return Command::FAILURE;
+        }
+
+        // Set default URL for Monday
+        if (UserCredential::PROVIDER_MONDAY === $provider) {
+            $url = 'https://api.monday.com';
         }
 
         // Calculate expiry in seconds

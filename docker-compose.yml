@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_ENV: ${APP_ENV:-prod}
     container_name: mcp-redmine-app
     ports:
       - "8090:8080"

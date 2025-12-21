@@ -16,6 +16,7 @@ final readonly class UserCredential
 {
     public const PROVIDER_REDMINE = 'redmine';
     public const PROVIDER_JIRA = 'jira';
+    public const PROVIDER_MONDAY = 'monday';
 
     public function __construct(
         public string $userId,
@@ -41,5 +42,10 @@ final readonly class UserCredential
     public function isJira(): bool
     {
         return self::PROVIDER_JIRA === $this->provider;
+    }
+
+    public function isMonday(): bool
+    {
+        return self::PROVIDER_MONDAY === $this->provider;
     }
 }

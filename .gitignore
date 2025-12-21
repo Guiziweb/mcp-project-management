@@ -42,8 +42,9 @@ yarn.lock
 ###< Cache and compiled files ###
 
 ###> Environment and configuration ###
-# Do NOT ignore .env (Symfony convention: base .env must be committed)
-# Only ignore files with secrets
+# .env is ignored - use .env.template for structure
+# Deploy creates .env via: envsubst < .env.template > .env
+.env
 .env.local
 .env.*.local
 ###< Environment and configuration ###

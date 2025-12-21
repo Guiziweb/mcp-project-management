@@ -1,303 +1,203 @@
-# MCP Project Tools Server
+# MCP Project Management
 
-A secure, multi-user MCP (Model Context Protocol) server that integrates project management tools (Redmine, Jira) with AI assistants like Claude Desktop and Claude Code. Features OAuth2 authentication, encrypted credentials embedded in JWT tokens, and natural language interaction with your projects, issues, and time tracking.
+Multi-provider MCP server for project management and time tracking. Connects AI assistants (Claude Desktop/Code, Cursor, etc.) to Redmine, Jira Cloud, Monday.com, and Trello with OAuth2.
 
-## Features
+## Supported Providers
 
-- **Multi-Provider Support**: Connect to Redmine or Jira Cloud
-- **OAuth2 Authentication**: Secure Google Sign-In for team authentication
-- **Multi-user Support**: Each user has their own provider credentials
-- **Stateless Architecture**: No database required - credentials encrypted in JWT tokens
-- **Email Whitelist**: Domain-based access control (configurable)
-- **HTTP Transport**: REST API with JWT tokens
-- **Smart Time Tracking**: Natural language time logging with automatic summaries
+| Provider | Projects | Project Write | Issues | Issue Write | Time Read | Time Write | Attachments | Attachment Write | Activities |
+|----------|:--------:|:-------------:|:------:|:-----------:|:---------:|:----------:|:-----------:|:----------------:|:----------:|
+| Redmine  | x | | x | | x | x | x | | required for log_time |
+| Jira Cloud | x | | x | | x | x | x | | |
+| Monday.com | x | | x | | x | | x | | |
+| Trello | | | | | | | | | |
+
+## MCP Tools
+
+Tools are dynamically exposed based on provider capabilities:
+
+| Tool | Description | Redmine | Jira | Monday |
+|------|-------------|:-------:|:----:|:------:|
+| `list_projects` | List accessible projects | x | x | x |
+| `list_issues` | Issues assigned to user | x | x | x |
+| `get_issue_details` | Issue details (description, comments, attachments) | x | x | x |
+| `list_time_entries` | Time entries for a date range | x | x | x |
+| `get_attachment` | Download an attachment | x | x | x |
+| `log_time` | Log time on an issue | x | x | |
+| `update_time_entry` | Update a time entry | x | x | |
+| `delete_time_entry` | Delete a time entry | x | x | |
+| `list_activities` | Time tracking activity types | x | | |
 
 ## Quick Start
 
-### For Users (Claude Desktop / Claude Code)
-
-#### 1. Get the Server URL
-
-Ask your administrator for:
-- Server URL (e.g., `https://mcp.yourcompany.com`)
-- Confirm your email is whitelisted
-
-#### 2. Configure Claude Code
+### Claude Code Configuration
 
 Create `.mcp.json` in your project or `~/.claude/.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "redmine": {
+    "timetracking": {
       "type": "http",
-      "url": "https://mcp.yourcompany.com/mcp"
+      "url": "https://your-server.com/mcp"
     }
   }
 }
 ```
 
-#### 3. Authenticate
+### Authentication
 
-1. Run `/mcp` in Claude Code
-2. First use will redirect you to Google Sign-In
-3. After authentication, choose your provider (Redmine or Jira)
-4. Provide your instance URL and API key (+ email for Jira)
-5. Done! You can now interact with your projects
-
-### For Administrators (Deployment)
-
-#### Docker Deployment
-
-```bash
-# Clone and configure
-git clone https://github.com/guiziweb/mcp-redmine.git
-cd mcp-redmine
-cp .env.example .env.local
-# Edit .env.local with your settings
-
-# Deploy
-make deploy
-
-# View logs
-make docker-logs
-```
-
-#### GitHub Actions (Auto-deploy)
-
-The repository includes a GitHub Actions workflow for automatic deployment to a VPS. Configure these secrets in your repository:
-
-- `VPS_HOST`: Your server hostname
-- `VPS_USER`: SSH username
-- `VPS_SSH_KEY`: SSH private key
-- `APP_SECRET`: Symfony app secret
-- `JWT_SECRET`: JWT signing secret
-- `APP_URL`: Your server URL
-- `GOOGLE_CLIENT_ID`: Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
-- `ENCRYPTION_KEY`: Sodium encryption key (base64)
-- `ALLOWED_EMAIL_DOMAINS`: Allowed email domains
-
-## Available Tools
-
-| Tool | Description | Example Prompts |
-|------|-------------|-----------------|
-| **List Projects** | Show all accessible Redmine projects | "Show my projects", "List all projects" |
-| **List Issues** | List issues from a specific project | "Show issues from Mobile App project", "List tickets in #123" |
-| **Get Issue Details** | Get comprehensive issue information | "Show details of issue #456", "Get issue #789 with journals" |
-| **List Time Entries** | Retrieve time entries with smart filtering | "Show my hours this week", "Time entries from August", "My daily average" |
-| **Log Time** | Log time to an issue interactively | "Log 2 hours to issue #123", "Add time to ticket #456" |
-| **List Activities** | Show available time entry activities | "Show activity types", "What activities can I log?" |
-
-### Smart Features
-
-- **Date Intelligence**: "last week", "this month", "August 2025"
-- **Automatic Summaries**: Total hours, daily/weekly breakdowns
-- **Work Analysis**: Hours per day, project breakdowns, patterns
-- **Interactive**: Will ask for missing parameters
+1. First request → Google Sign-In redirect
+2. Choose provider (Redmine/Jira/Monday)
+3. Enter credentials (URL + API key)
+4. JWT token generated with encrypted credentials
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph Clients
+        Claude["Claude Desktop/Code"]
+        Cursor
+    end
+
+    subgraph MCP["MCP Server"]
+        Auth["Google OAuth → JWT"]
+        Tools["MCP Tools"]
+
+        subgraph Domain["Domain Models"]
+            Project
+            Issue["Issue (+ Comments, Attachments)"]
+            TimeEntry["TimeEntry (+ Activity)"]
+            User
+        end
+
+        subgraph Adapters
+            RedmineAdapter
+            JiraAdapter
+            MondayAdapter
+        end
+    end
+
+    subgraph APIs["External APIs"]
+        Redmine
+        Jira
+        Monday
+    end
+
+    Clients -->|HTTP + JWT| Tools
+    Tools --> Domain
+    Domain --> Adapters
+    RedmineAdapter --> Redmine
+    JiraAdapter --> Jira
+    MondayAdapter --> Monday
 ```
-┌─────────────────────┐
-│   Claude Client     │
-│  (Desktop / Code)   │
-└─────────┬───────────┘
-          │ HTTP + JWT
-          ▼
-┌─────────────────────────────────────────┐
-│   MCP Project Tools Server (Stateless)  │
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │  OAuth2 Controller              │    │
-│  │  Google Sign-In + Email Check   │    │
-│  └─────────────┬───────────────────┘    │
-│                │                        │
-│  ┌─────────────▼───────────────────┐    │
-│  │  JWT with Encrypted Credentials │    │
-│  │  Access: 24h / Refresh: 30d     │    │
-│  └─────────────┬───────────────────┘    │
-│                │                        │
-│  ┌─────────────▼───────────────────┐    │
-│  │  ProviderFactory                │    │
-│  │  (Redmine / Jira)               │    │
-│  └─────────────┬───────────────────┘    │
-└────────────────┼────────────────────────┘
-                 │
-        ┌────────┴────────┐
-        ▼                 ▼
-┌───────────────┐ ┌───────────────┐
-│  Redmine API  │ │   Jira API    │
-└───────────────┘ └───────────────┘
-```
 
-**Key Components:**
-- **OAuth2 Controller**: Handles Google authentication and email whitelist verification
-- **JWT Tokens**: Access token (24h) + Refresh token (30 days) with encrypted provider credentials
-- **ProviderFactory**: Creates the appropriate provider (Redmine or Jira) based on user credentials
-- **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) inside JWT
+### Principles
 
-**Stateless Design:**
-- No database required
-- Credentials are encrypted and embedded in JWT tokens
-- Users re-authenticate via Google every 30 days (refresh token expiry)
+- **No database**: Credentials embedded in JWT
+- **Dynamic capabilities**: Tools filtered by provider (e.g., Monday doesn't have `log_time`)
 
-## Development
+## Installation
 
-### Requirements
-
-- PHP 8.2+
-- Composer
-- Sodium extension
-- Docker (for deployment)
-
-### Local Setup
+### Docker (Production)
 
 ```bash
-# Clone repository
 git clone https://github.com/guiziweb/mcp-redmine.git
 cd mcp-redmine
+cp .env.example .env.local
+# Edit .env.local
 
-# Install dependencies
+make deploy
+```
+
+### Local (Development)
+
+```bash
 composer install
+cp .env.example .env.local
+# Edit .env.local
 
-# Configure environment
-cp .env.template .env.local
-# Edit .env.local with your settings
-
-# Generate encryption key
-php -r "echo base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES)) . PHP_EOL;"
-
-# Start development server
 symfony server:start --port=8080
 ```
 
-### Makefile Commands
-
-```bash
-make dev          # Install dev dependencies
-make deploy       # Rebuild and restart Docker
-make docker-logs  # View container logs
-make test         # Run tests
-make phpstan      # Static analysis
-make cs-fix       # Fix code style
-```
+## Configuration
 
 ### Environment Variables
 
-**Required:**
-- `APP_URL`: Your server URL (ngrok for dev, custom domain for prod)
-- `GOOGLE_CLIENT_ID`: From Google Cloud Console
-- `GOOGLE_CLIENT_SECRET`: From Google Cloud Console
-- `ENCRYPTION_KEY`: Base64-encoded 32-byte Sodium key
-- `JWT_SECRET`: Random string for JWT signing
+```bash
+# Required
+APP_URL=https://your-server.com
+JWT_SECRET=your-jwt-secret
+ENCRYPTION_KEY=base64-encoded-sodium-key
+GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxx
 
-**Optional:**
-- `APP_ENV`: `dev` or `prod` (default: `dev`)
-- `ALLOWED_EMAIL_DOMAINS`: Comma-separated list of allowed email domains
-- `ALLOWED_EMAILS`: Comma-separated list of specific allowed emails
+# Access control (at least one required)
+ALLOWED_EMAIL_DOMAINS=company.com
+ALLOWED_EMAILS=user@example.com
+```
 
-### Bot Tokens (for automation)
+### Google OAuth Setup
 
-Create a long-lived bot token with embedded credentials:
+1. [Google Cloud Console](https://console.cloud.google.com/) → New project
+2. APIs & Services → OAuth consent screen → External
+3. Credentials → OAuth 2.0 Client ID → Web application
+4. Redirect URI: `https://your-server.com/oauth/google-callback`
+
+## Commands
 
 ```bash
-# For Redmine
-docker exec mcp-redmine-app php bin/console app:create-bot \
-  bot-name \
-  https://redmine.example.com \
-  your-redmine-api-key
+make dev              # Install dev dependencies
+make static-analysis  # PHPStan + CS check + lints
+make cs-fix           # Fix code style
+make test             # Run tests
+make deploy           # Docker rebuild
+```
 
-# For Jira
-docker exec mcp-redmine-app php bin/console app:create-bot \
-  bot-name \
-  https://your-instance.atlassian.net \
-  your-jira-api-token \
+### Bot Token (automation)
+
+```bash
+# Redmine
+php bin/console app:create-bot \
+  --provider=redmine \
+  --email=bot@company.com \
+  --url=https://redmine.company.com \
+  --api-key=xxx
+
+# Jira
+php bin/console app:create-bot \
   --provider=jira \
-  --provider-email=your-email@company.com
+  --email=bot@company.com \
+  --url=https://company.atlassian.net \
+  --api-key=xxx \
+  --provider-email=jira-user@company.com
+
+# Monday (no --url needed)
+php bin/console app:create-bot \
+  --provider=monday \
+  --email=bot@company.com \
+  --api-key=xxx
 ```
 
-### Testing
+## Project Structure
 
-```bash
-# Run all tests
-make test
-
-# Static analysis
-make phpstan
-
-# Code style
-make cs-fix
 ```
-
-## Google OAuth Configuration
-
-### 1. Create Google Cloud Project
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create new project: "MCP Redmine"
-3. Enable Google+ API
-
-### 2. Configure OAuth Consent Screen
-
-1. APIs & Services → OAuth consent screen
-2. User Type: **External**
-3. App name: "MCP Redmine"
-4. Scopes: `email`, `profile` (non-sensitive, no validation required)
-
-### 3. Create OAuth2 Credentials
-
-1. APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID
-2. Application type: **Web application**
-3. Authorized redirect URIs:
-   - Development: `https://your-ngrok-url.ngrok-free.dev/oauth/google-callback`
-   - Production: `https://mcp.yourcompany.com/oauth/google-callback`
-4. Save and copy Client ID and Client Secret
-
-### 4. Email Whitelist
-
-Configure allowed users via environment variables:
-
-```bash
-# Allow entire domains (comma-separated)
-ALLOWED_EMAIL_DOMAINS=yourcompany.com
-
-# Allow specific emails (comma-separated)
-ALLOWED_EMAILS=alice@example.com,bob@example.com
+src/
+├── Domain/
+│   ├── Model/          # Issue, Project, TimeEntry, User, etc.
+│   ├── Port/           # Interfaces (IssuePort, TimeEntryReadPort, etc.)
+│   └── Service/        # Domain services
+├── Infrastructure/
+│   ├── Adapter/        # AdapterFactory, CurrentUserService
+│   ├── Redmine/        # RedmineAdapter, RedmineClient, Normalizers
+│   ├── Jira/           # JiraAdapter, JiraClient, Normalizers
+│   ├── Monday/         # MondayAdapter, MondayClient, Normalizers
+│   ├── Security/       # JWT, OAuth, Encryption
+│   └── Web/            # Forms, Components
+├── Tools/              # MCP Tools (ListIssuesTool, LogTimeTool, etc.)
+└── Controller/         # McpController, OAuthController
 ```
-
-Both options can be combined. If neither is set, no users will be able to access the application.
-
-## Security
-
-- **Encryption**: Credentials encrypted with Sodium (XSalsa20-Poly1305) in JWT
-- **Google OAuth**: Identity verified through Google
-- **Email Whitelist**: Only authorized emails can access
-- **HTTPS**: Required in production
-- **Token Expiry**: Access tokens expire in 24h, refresh tokens in 30 days
-
-## Troubleshooting
-
-### "Email not authorized"
-Your email is not in the whitelist. Contact your administrator.
-
-### OAuth redirect fails
-- Verify `APP_URL` matches your actual server URL
-- Check Google Console redirect URIs match exactly
-- Ensure OAuth2 credentials are correct in environment
-
-### "Token expired"
-- Access tokens expire after 24 hours
-- Refresh tokens expire after 30 days
-- Re-authenticate via Google to get new tokens
 
 ## License
 
 MIT
-
-## Related
-
-- [Model Context Protocol](https://github.com/anthropics/mcp)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-- [Redmine API](https://www.redmine.org/projects/redmine/wiki/Rest_api)
-- [Jira Cloud REST API](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)

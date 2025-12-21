@@ -1,5 +1,8 @@
 FROM php:8.4-fpm-alpine
 
+# Build argument for environment (dev or prod)
+ARG APP_ENV=prod
+
 # Install system dependencies
 RUN apk add --no-cache \
     git \
@@ -25,13 +28,18 @@ WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
 
 # Install dependencies (without scripts, they need app files)
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+# In dev mode: include dev dependencies, in prod: exclude them
+RUN if [ "$APP_ENV" = "dev" ]; then \
+        composer install --optimize-autoloader --no-scripts --no-interaction; \
+    else \
+        composer install --no-dev --optimize-autoloader --no-scripts --no-interaction; \
+    fi
 
 # Copy application files
 COPY . .
 
-# Run post-install scripts now that app files are present (in prod mode to skip dev bundles)
-RUN APP_ENV=prod composer run-script post-install-cmd --no-interaction
+# Run post-install scripts now that app files are present
+RUN APP_ENV=$APP_ENV composer run-script post-install-cmd --no-interaction
 
 # Copy nginx and supervisor configurations
 COPY docker/nginx/nginx.conf /etc/nginx/http.d/default.conf
@@ -48,7 +56,10 @@ RUN chown -R www-data:www-data var/
 # Expose port
 EXPOSE 8080
 
+# Set APP_ENV as environment variable for runtime
+ENV APP_ENV=${APP_ENV}
+
 # Start: clear cache, then start supervisor (which manages nginx + php-fpm)
-CMD php bin/console cache:clear --env=prod --no-debug && \
+CMD php bin/console cache:clear && \
     chown -R www-data:www-data /app/var && \
     /usr/bin/supervisord -c /etc/supervisord.conf

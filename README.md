@@ -102,8 +102,8 @@ flowchart TB
 ### Docker (Production)
 
 ```bash
-git clone https://github.com/guiziweb/mcp-redmine.git
-cd mcp-redmine
+git clone https://github.com/guiziweb/mcp-project-management.git
+cd mcp-project-management
 cp .env.example .env.local
 # Edit .env.local
 

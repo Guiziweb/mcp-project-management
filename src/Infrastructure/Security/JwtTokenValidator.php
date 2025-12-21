@@ -92,7 +92,7 @@ final class JwtTokenValidator
         $now = time();
 
         $payload = array_merge([
-            'iss' => 'mcp-redmine-auth-server', // issuer
+            'iss' => 'mcp-project-management', // issuer
             'sub' => $userId, // subject (user ID)
             'iat' => $now, // issued at
             'exp' => $now + $expiresIn, // expiration

@@ -1,4 +1,4 @@
-# Makefile pour redmine-mcp
+# Makefile pour mcp-project-management
 # Usage: make [target]
 
 .PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy lint-container lint-twig lint
@@ -61,7 +61,7 @@ clean-dev: ## Supprimer node_modules
 	rm -rf node_modules/ package-lock.json
 
 help: ## Afficher cette aide
-	@echo "REDMINE-MCP MAKEFILE"
+	@echo "MCP-PROJECT-MANAGEMENT MAKEFILE"
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
@@ -69,7 +69,7 @@ help: ## Afficher cette aide
 
 # Docker
 docker-build: ## Build l'image Docker
-	docker build -t redmine-mcp .
+	docker build -t mcp-project-management .
 
 docker-up: ## Lancer le container
 	docker compose up -d

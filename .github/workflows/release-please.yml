@@ -43,7 +43,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: APP_SECRET,JWT_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY,ALLOWED_EMAIL_DOMAINS,ALLOWED_EMAILS
           script: |
-            cd /opt/redmine-mcp
+            cd /opt/mcp-project-management
 
             # Force update to latest code (discard local changes)
             git fetch origin main
@@ -66,4 +66,4 @@ jobs:
 
             # Show deployment status
             echo "Deployment completed!"
-            docker ps | grep mcp-redmine
+            docker ps | grep mcp-project-management

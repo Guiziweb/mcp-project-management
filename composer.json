@@ -1,6 +1,6 @@
 {
-    "name": "guiziweb/mcp-redmine",
-    "description": "MCP (Model Context Protocol) server for Redmine integration with AI assistants like Claude Desktop",
+    "name": "guiziweb/mcp-project-management",
+    "description": "Multi-provider MCP server for project management and time tracking",
     "type": "project",
     "license": "MIT",
     "keywords": [
@@ -20,10 +20,10 @@
             "email": "guiziweb@gmail.com"
         }
     ],
-    "homepage": "https://github.com/guiziweb/mcp-redmine",
+    "homepage": "https://github.com/guiziweb/mcp-project-management",
     "support": {
-        "issues": "https://github.com/guiziweb/mcp-redmine/issues",
-        "source": "https://github.com/guiziweb/mcp-redmine"
+        "issues": "https://github.com/guiziweb/mcp-project-management/issues",
+        "source": "https://github.com/guiziweb/mcp-project-management"
     },
     "prefer-stable": true,
     "require": {

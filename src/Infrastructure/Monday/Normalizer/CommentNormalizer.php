@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Monday\Normalizer;
 
-use App\Domain\Model\Comment;
+use App\Domain\Comment\Comment;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**

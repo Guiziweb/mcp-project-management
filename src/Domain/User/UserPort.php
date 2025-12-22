@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Port;
-
-use App\Domain\Model\User;
+namespace App\Domain\User;
 
 interface UserPort
 {

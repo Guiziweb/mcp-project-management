@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Model;
+namespace App\Domain\User;
 
 /**
- * Represents a project in the time tracking system.
+ * Represents a user in the time tracking system.
  */
-readonly class Project
+readonly class User
 {
     public function __construct(
         public int $id,
         public string $name,
-        public ?Project $parent = null,
+        public string $email,
     ) {
     }
 }

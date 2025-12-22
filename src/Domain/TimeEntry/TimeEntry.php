@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Model;
+namespace App\Domain\TimeEntry;
+
+use App\Domain\Activity\Activity;
+use App\Domain\Issue\Issue;
+use App\Domain\User\User;
 
 /**
  * Represents a time entry logged against an issue.

@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Model;
+namespace App\Domain\Issue;
+
+use App\Domain\Attachment\Attachment;
+use App\Domain\Comment\Comment;
+use App\Domain\Project\Project;
 
 /**
  * Represents an issue/task in the time tracking system.

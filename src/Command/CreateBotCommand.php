@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Domain\Model\UserCredential;
+use App\Domain\Shared\UserCredential;
 use App\Infrastructure\Security\JwtTokenValidator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

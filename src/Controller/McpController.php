@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Domain\Port\ActivityPort;
-use App\Domain\Port\TimeEntryWritePort;
+use App\Domain\Activity\ActivityPort;
+use App\Domain\TimeEntry\TimeEntryWritePort;
 use App\Infrastructure\Adapter\AdapterFactory;
 use App\Infrastructure\Security\User;
 use App\Tools\DeleteTimeEntryTool;

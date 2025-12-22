@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Service;
-
-use App\Domain\Model\TimeEntry;
-use App\Domain\Port\TimeEntryPort;
+namespace App\Domain\TimeEntry;
 
 /**
  * Domain service for time entry management with business rules.
@@ -13,7 +10,7 @@ use App\Domain\Port\TimeEntryPort;
 class TimeEntryService
 {
     public function __construct(
-        private readonly TimeEntryPort $adapter,
+        private readonly TimeEntryReadPort&TimeEntryWritePort $adapter,
     ) {
     }
 

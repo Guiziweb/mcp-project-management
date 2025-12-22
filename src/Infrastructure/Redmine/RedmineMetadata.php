@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine;
 
-use App\Domain\Port\PortMetadataInterface;
+use App\Infrastructure\Adapter\PortMetadataInterface;
 
 /**
  * Metadata for the Redmine adapter.

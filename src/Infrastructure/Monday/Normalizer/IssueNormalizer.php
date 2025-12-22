@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Monday\Normalizer;
 
-use App\Domain\Model\Attachment;
-use App\Domain\Model\Comment;
-use App\Domain\Model\Issue;
-use App\Domain\Model\Project;
+use App\Domain\Attachment\Attachment;
+use App\Domain\Comment\Comment;
+use App\Domain\Issue\Issue;
+use App\Domain\Project\Project;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;

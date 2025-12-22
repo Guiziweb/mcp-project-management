@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Jira\Normalizer;
 
-use App\Domain\Model\Attachment;
+use App\Domain\Attachment\Attachment;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**

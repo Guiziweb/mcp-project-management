@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Port;
-
-use App\Domain\Model\Project;
+namespace App\Domain\Project;
 
 interface ProjectPort
 {

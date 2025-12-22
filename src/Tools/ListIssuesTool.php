@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\IssuePort;
+use App\Domain\Issue\IssueReadPort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class ListIssuesTool
 {
     public function __construct(
-        private readonly IssuePort $adapter,
+        private readonly IssueReadPort $adapter,
     ) {
     }
 

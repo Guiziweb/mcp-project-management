@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine\Normalizer;
 
-use App\Domain\Model\Project;
+use App\Domain\Project\Project;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**

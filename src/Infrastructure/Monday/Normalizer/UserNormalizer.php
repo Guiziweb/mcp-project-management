@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Monday\Normalizer;
 
-use App\Domain\Model\User;
+use App\Domain\User\User;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Monday;
 
-use App\Domain\Model\Issue;
-use App\Domain\Model\Project;
-use App\Domain\Model\TimeEntry;
-use App\Domain\Model\User;
-use App\Domain\Port\AttachmentPort;
-use App\Domain\Port\IssuePort;
-use App\Domain\Port\ProjectPort;
-use App\Domain\Port\TimeEntryReadPort;
-use App\Domain\Port\UserPort;
+use App\Domain\Attachment\AttachmentReadPort;
+use App\Domain\Issue\Issue;
+use App\Domain\Issue\IssueReadPort;
+use App\Domain\Project\Project;
+use App\Domain\Project\ProjectPort;
+use App\Domain\TimeEntry\TimeEntry;
+use App\Domain\TimeEntry\TimeEntryReadPort;
+use App\Domain\User\User;
+use App\Domain\User\UserPort;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
  * Only implements TimeEntryReadPort (not Write) because Monday API
  * doesn't support logging time programmatically.
  */
-class MondayAdapter implements UserPort, ProjectPort, IssuePort, TimeEntryReadPort, AttachmentPort
+class MondayAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, AttachmentReadPort
 {
     private ?User $currentUser = null;
     private ?string $currentUserId = null;

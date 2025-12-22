@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Port;
+namespace App\Infrastructure\Adapter;
 
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\TimeEntryPort;
-use App\Domain\Service\TimeEntryService;
+use App\Domain\TimeEntry\TimeEntryService;
+use App\Domain\TimeEntry\TimeEntryWritePort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -14,7 +14,7 @@ final class LogTimeTool
 {
     public function __construct(
         private readonly TimeEntryService $timeEntryService,
-        private readonly TimeEntryPort $adapter,
+        private readonly TimeEntryWritePort $adapter,
     ) {
     }
 

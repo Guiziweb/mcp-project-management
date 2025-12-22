@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Security;
 
-use App\Domain\Model\UserCredential;
+use App\Domain\Shared\UserCredential;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**

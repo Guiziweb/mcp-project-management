@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Port;
+namespace App\Domain\Attachment;
 
-interface AttachmentPort
+interface AttachmentReadPort
 {
     /**
      * Get attachment metadata.

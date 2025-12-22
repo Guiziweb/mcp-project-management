@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Adapter;
 
-use App\Domain\Model\UserCredential;
-use App\Domain\Port\AttachmentPort;
-use App\Domain\Port\IssuePort;
-use App\Domain\Port\ProjectPort;
-use App\Domain\Port\TimeEntryReadPort;
-use App\Domain\Port\UserPort;
+use App\Domain\Attachment\AttachmentReadPort;
+use App\Domain\Issue\IssueReadPort;
+use App\Domain\Project\ProjectPort;
+use App\Domain\Shared\UserCredential;
+use App\Domain\TimeEntry\TimeEntryReadPort;
+use App\Domain\User\UserPort;
 use App\Infrastructure\Jira\JiraAdapter;
 use App\Infrastructure\Jira\JiraClient;
 use App\Infrastructure\Monday\MondayAdapter;
@@ -41,7 +41,7 @@ final readonly class AdapterFactory
      *
      * @throws \InvalidArgumentException if adapter type is not supported
      */
-    public function createForUser(UserCredential $credential): UserPort&ProjectPort&IssuePort&TimeEntryReadPort&AttachmentPort
+    public function createForUser(UserCredential $credential): UserPort&ProjectPort&IssueReadPort&TimeEntryReadPort&AttachmentReadPort
     {
         return match ($credential->provider) {
             UserCredential::PROVIDER_REDMINE => $this->createRedmineAdapter($credential),

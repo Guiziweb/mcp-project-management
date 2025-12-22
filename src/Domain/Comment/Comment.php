@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Model;
+namespace App\Domain\Comment;
+
+use App\Domain\Attachment\Attachment;
 
 /**
  * Represents a comment on an issue.

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Adapter;
 
-use App\Domain\Port\PortMetadataInterface;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 
 /**

@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Jira;
 
-use App\Domain\Model\Issue;
-use App\Domain\Model\Project;
-use App\Domain\Model\TimeEntry;
-use App\Domain\Model\User;
-use App\Domain\Port\AttachmentPort;
-use App\Domain\Port\IssuePort;
-use App\Domain\Port\ProjectPort;
-use App\Domain\Port\TimeEntryPort;
-use App\Domain\Port\UserPort;
+use App\Domain\Attachment\AttachmentReadPort;
+use App\Domain\Issue\Issue;
+use App\Domain\Issue\IssueReadPort;
+use App\Domain\Project\Project;
+use App\Domain\Project\ProjectPort;
+use App\Domain\TimeEntry\TimeEntry;
+use App\Domain\TimeEntry\TimeEntryReadPort;
+use App\Domain\TimeEntry\TimeEntryWritePort;
+use App\Domain\User\User;
+use App\Domain\User\UserPort;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
  * Jira Cloud adapter (no ActivityPort - Jira doesn't have activities).
  */
-class JiraAdapter implements UserPort, ProjectPort, IssuePort, TimeEntryPort, AttachmentPort
+class JiraAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, TimeEntryWritePort, AttachmentReadPort
 {
     private ?User $currentUser = null;
     private ?string $currentUserAccountId = null;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Jira\Normalizer;
 
-use App\Domain\Model\Issue;
-use App\Domain\Model\TimeEntry;
-use App\Domain\Model\User;
+use App\Domain\Issue\Issue;
+use App\Domain\TimeEntry\TimeEntry;
+use App\Domain\User\User;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;

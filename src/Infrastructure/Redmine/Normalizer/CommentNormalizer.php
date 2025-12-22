@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Redmine\Normalizer;
 
-use App\Domain\Model\Attachment;
-use App\Domain\Model\Comment;
+use App\Domain\Attachment\Attachment;
+use App\Domain\Comment\Comment;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;

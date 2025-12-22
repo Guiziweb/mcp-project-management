@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Model;
+namespace App\Domain\Shared;
 
 /**
  * Represents a user's time tracking provider credentials.
@@ -32,20 +32,5 @@ final readonly class UserCredential
     public function isAdmin(): bool
     {
         return 'admin' === $this->role;
-    }
-
-    public function isRedmine(): bool
-    {
-        return self::PROVIDER_REDMINE === $this->provider;
-    }
-
-    public function isJira(): bool
-    {
-        return self::PROVIDER_JIRA === $this->provider;
-    }
-
-    public function isMonday(): bool
-    {
-        return self::PROVIDER_MONDAY === $this->provider;
     }
 }

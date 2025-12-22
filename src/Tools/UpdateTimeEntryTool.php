@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tools;
 
-use App\Domain\Port\TimeEntryPort;
+use App\Domain\TimeEntry\TimeEntryWritePort;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class UpdateTimeEntryTool
 {
     public function __construct(
-        private readonly TimeEntryPort $adapter,
+        private readonly TimeEntryWritePort $adapter,
     ) {
     }
 

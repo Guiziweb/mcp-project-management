@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Adapter;
 
-use App\Domain\Model\Issue;
-use App\Domain\Model\TimeEntry;
-use App\Domain\Model\User;
-use App\Domain\Port\ActivityPort;
-use App\Domain\Port\AttachmentPort;
-use App\Domain\Port\IssuePort;
-use App\Domain\Port\ProjectPort;
-use App\Domain\Port\TimeEntryPort;
-use App\Domain\Port\TimeEntryReadPort;
-use App\Domain\Port\TimeEntryWritePort;
-use App\Domain\Port\UserPort;
+use App\Domain\Activity\ActivityPort;
+use App\Domain\Attachment\AttachmentReadPort;
+use App\Domain\Issue\Issue;
+use App\Domain\Issue\IssueReadPort;
+use App\Domain\Project\ProjectPort;
+use App\Domain\TimeEntry\TimeEntry;
+use App\Domain\TimeEntry\TimeEntryReadPort;
+use App\Domain\TimeEntry\TimeEntryWritePort;
+use App\Domain\User\User;
+use App\Domain\User\UserPort;
 use App\Infrastructure\Security\User as SecurityUser;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -34,13 +33,12 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  */
 #[AsAlias(UserPort::class)]
 #[AsAlias(ProjectPort::class)]
-#[AsAlias(IssuePort::class)]
-#[AsAlias(TimeEntryPort::class)]
+#[AsAlias(IssueReadPort::class)]
 #[AsAlias(TimeEntryReadPort::class)]
 #[AsAlias(TimeEntryWritePort::class)]
 #[AsAlias(ActivityPort::class)]
-#[AsAlias(AttachmentPort::class)]
-final readonly class CurrentUserService implements UserPort, ProjectPort, IssuePort, TimeEntryPort, ActivityPort, AttachmentPort
+#[AsAlias(AttachmentReadPort::class)]
+final readonly class CurrentUserService implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, AttachmentReadPort
 {
     public function __construct(
         private Security $security,
@@ -51,7 +49,7 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueP
     /**
      * Get the adapter instance for the current user.
      */
-    private function getCurrentAdapter(): UserPort&ProjectPort&IssuePort&TimeEntryReadPort&AttachmentPort
+    private function getCurrentAdapter(): UserPort&ProjectPort&IssueReadPort&TimeEntryReadPort&AttachmentReadPort
     {
         $user = $this->security->getUser();
 

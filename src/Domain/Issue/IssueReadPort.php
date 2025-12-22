@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Port;
+namespace App\Domain\Issue;
 
-use App\Domain\Model\Issue;
-
-interface IssuePort
+interface IssueReadPort
 {
     /**
      * Get user's issues, optionally filtered by project.

@@ -6,6 +6,7 @@ namespace App\Infrastructure\Redmine;
 
 use Psr\Log\LoggerInterface;
 use Redmine\Client\NativeCurlClient;
+use Redmine\Http\HttpFactory;
 
 /**
  * Client for Redmine API.
@@ -253,5 +254,65 @@ class RedmineClient
         $api = $client->getApi('time_entry');
 
         return $api->remove($timeEntryId);
+    }
+
+    /**
+     * Add a note (comment) to an issue.
+     *
+     * @param int    $issueId Issue ID
+     * @param string $notes   The note/comment content
+     * @param bool   $private Whether the note is private (visible only to roles with "View private notes" permission)
+     */
+    public function addIssueNote(int $issueId, string $notes, bool $private = false): void
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('issue');
+
+        $params = [
+            'notes' => $notes,
+            'private_notes' => $private,
+        ];
+
+        $result = $api->update($issueId, $params);
+
+        if (false === $result) {
+            throw new \RuntimeException('Failed to add note to issue');
+        }
+    }
+
+    /**
+     * Update a journal (comment) on an issue.
+     *
+     * @param int    $journalId Journal/comment ID
+     * @param string $notes     The new note content
+     */
+    public function updateJournal(int $journalId, string $notes): void
+    {
+        $client = $this->getClient();
+
+        $response = $client->request(HttpFactory::makeJsonRequest(
+            'PUT',
+            '/journals/'.$journalId.'.json',
+            json_encode(['journal' => ['notes' => $notes]]) ?: ''
+        ));
+
+        if ($response->getStatusCode() >= 400) {
+            throw new \RuntimeException('Failed to update journal: '.$response->getContent());
+        }
+    }
+
+    /**
+     * Delete a journal comment from an issue.
+     *
+     * Note: Redmine doesn't have a DELETE endpoint for journals.
+     * Setting notes to empty string deletes the comment.
+     * If the journal has field changes (journal_details), the journal
+     * entry remains but without the comment text.
+     *
+     * @param int $journalId Journal/comment ID
+     */
+    public function deleteJournal(int $journalId): void
+    {
+        $this->updateJournal($journalId, '');
     }
 }

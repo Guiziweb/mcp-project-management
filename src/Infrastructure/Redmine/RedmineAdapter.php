@@ -9,6 +9,7 @@ use App\Domain\Activity\ActivityPort;
 use App\Domain\Attachment\AttachmentReadPort;
 use App\Domain\Issue\Issue;
 use App\Domain\Issue\IssueReadPort;
+use App\Domain\Issue\IssueWritePort;
 use App\Domain\Project\Project;
 use App\Domain\Project\ProjectPort;
 use App\Domain\TimeEntry\TimeEntry;
@@ -21,7 +22,7 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 /**
  * Redmine adapter implementing all ports.
  */
-class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, AttachmentReadPort
+class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, AttachmentReadPort
 {
     private ?User $currentUser = null;
 
@@ -231,5 +232,20 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryR
     public function deleteTimeEntry(int $timeEntryId): void
     {
         $this->redmineClient->deleteTimeEntry($timeEntryId);
+    }
+
+    public function addComment(int $issueId, string $comment, bool $private = false): void
+    {
+        $this->redmineClient->addIssueNote($issueId, $comment, $private);
+    }
+
+    public function updateComment(int $commentId, string $comment): void
+    {
+        $this->redmineClient->updateJournal($commentId, $comment);
+    }
+
+    public function deleteComment(int $commentId): void
+    {
+        $this->redmineClient->deleteJournal($commentId);
     }
 }

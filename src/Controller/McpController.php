@@ -8,10 +8,10 @@ use App\Domain\Activity\ActivityPort;
 use App\Domain\TimeEntry\TimeEntryWritePort;
 use App\Infrastructure\Adapter\AdapterFactory;
 use App\Infrastructure\Security\User;
+use App\Resources\ActivitiesResource;
 use App\Tools\DeleteTimeEntryTool;
 use App\Tools\GetAttachmentTool;
 use App\Tools\GetIssueDetailsTool;
-use App\Tools\ListActivitiesTool;
 use App\Tools\ListIssuesTool;
 use App\Tools\ListProjectsTool;
 use App\Tools\ListTimeEntriesTool;
@@ -33,8 +33,8 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * HTTP MCP endpoint with OAuth authentication.
  *
- * Tools are registered dynamically based on the provider's capabilities:
- * - ActivityPort: list_activities (Redmine only)
+ * Tools and resources are registered dynamically based on the provider's capabilities:
+ * - ActivityPort: activities resource (Redmine only)
  * - TimeEntryWritePort: log_time, update_time_entry, delete_time_entry (not Monday)
  */
 final class McpController extends AbstractController
@@ -86,9 +86,19 @@ final class McpController extends AbstractController
         $builder->addTool([ListTimeEntriesTool::class, 'listTimeEntries']);
         $builder->addTool([GetAttachmentTool::class, 'getAttachment']);
 
-        // Activity tools (Redmine only)
+        // Activity resource (Redmine only) - exposed as resource for LLM to read proactively
         if ($supportsActivity) {
-            $builder->addTool([ListActivitiesTool::class, 'listActivities']);
+            $builder->addResource(
+                [ActivitiesResource::class, 'getActivities'],
+                uri: 'provider://activities',
+                name: 'activities',
+                description: 'List of available time entry activities for logging time',
+                mimeType: 'application/json'
+            );
+            $builder->setInstructions(
+                'When logging time with log_time, you need an activity_id. '.
+                'Read the "provider://activities" resource to get the list of available activities with their IDs.'
+            );
         }
 
         // Time entry write tools (Redmine, Jira - not Monday)

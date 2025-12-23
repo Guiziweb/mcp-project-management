@@ -24,11 +24,11 @@ final class LogTimeTool
      * Can specify the date to log time on (defaults to today).
      * Some providers require activity_id (use list_activities tool first to get valid IDs).
      *
-     * @param int         $issue_id    The issue ID to log time against
-     * @param float       $hours       Number of hours to log
-     * @param string      $comment     Comments for the time entry
-     * @param int|null    $activity_id Activity ID (required for some providers like Redmine, use list_activities tool to get valid IDs)
-     * @param string|null $spent_on    Date in YYYY-MM-DD format (e.g., "2025-10-07"). Defaults to today if not specified.
+     * @param int             $issue_id    The issue ID to log time against
+     * @param float           $hours       Number of hours to log
+     * @param string          $comment     Comments for the time entry
+     * @param int|string|null $activity_id Activity ID (required for some providers like Redmine, use list_activities tool to get valid IDs)
+     * @param string|null     $spent_on    Date in YYYY-MM-DD format (e.g., "2025-10-07"). Defaults to today if not specified.
      *
      * @return array<string, mixed>
      */
@@ -37,10 +37,21 @@ final class LogTimeTool
         int $issue_id,
         float $hours,
         string $comment,
-        ?int $activity_id = null,
+        int|string|null $activity_id = null,
         ?string $spent_on = null,
     ): array {
         try {
+            // Normalize activity_id (some clients send strings)
+            $activity_id = null !== $activity_id ? (int) $activity_id : null;
+
+            // Validate activity_id format
+            if (null !== $activity_id && $activity_id <= 0) {
+                return [
+                    'success' => false,
+                    'error' => 'activity_id must be a positive integer.',
+                ];
+            }
+
             // Validate activity requirement
             if ($this->adapter->requiresActivity() && null === $activity_id) {
                 return [

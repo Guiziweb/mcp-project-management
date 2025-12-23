@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.4.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.3.0...v1.4.0) (2025-12-23)
+
+
+### Features
+
+* add Monday.com integration with dynamic tool filtering ([5ebfbf1](https://github.com/Guiziweb/mcp-project-management/commit/5ebfbf116d1c0aa0242137ed71912f5ecda1c1f4))
+
+
+### Bug Fixes
+
+* accept string activity_id from MCP clients ([efbf1cd](https://github.com/Guiziweb/mcp-project-management/commit/efbf1cdd133f67d3773e366e520a4d1972b73f25))
+* **jira:** use renderedFields for HTML description instead of ADF object ([b15df50](https://github.com/Guiziweb/mcp-project-management/commit/b15df5095288bc496f5b8b00b6a2f77e805bc117))
+* update composer.lock hash ([7890be9](https://github.com/Guiziweb/mcp-project-management/commit/7890be936585456a8130ce760d542430d424ffca))
+
+
+### Code Refactoring
+
+* align architecture with hexagonal/DDD conventions ([2cff71f](https://github.com/Guiziweb/mcp-project-management/commit/2cff71f78265384c195b5afd26062daa55e0103c))
+* reorganize Domain layer by DDD aggregate ([f1295bf](https://github.com/Guiziweb/mcp-project-management/commit/f1295bf3f7128b112661800909fc9d0a8a11bf76))
+* replace ListActivitiesTool with MCP resource + instructions ([16b6da0](https://github.com/Guiziweb/mcp-project-management/commit/16b6da073679d36943ec6acdc5080f0d5a35c211))
+* split TimeTrackingPort into segregated interfaces (ISP) ([1509795](https://github.com/Guiziweb/mcp-project-management/commit/1509795fe9ec9b8f78f8c8ea624b209e3b451c07))
+
+
+### Miscellaneous
+
+* configure release-please to show refactor commits ([3ec3e9c](https://github.com/Guiziweb/mcp-project-management/commit/3ec3e9cb90d827fd8a197b8b1687bc4a76f2ef0c))
+* rename repo to mcp-project-management ([78bd523](https://github.com/Guiziweb/mcp-project-management/commit/78bd52330c407b32e051bb485c1c28f97ac847e8))
+
 ## [1.3.0](https://github.com/Guiziweb/redmine-mcp/compare/v1.2.6...v1.3.0) (2025-12-20)
 
 

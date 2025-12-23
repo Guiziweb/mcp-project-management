@@ -36,6 +36,9 @@ jobs:
       - name: Validate composer.json
         run: composer validate --strict
 
+      - name: Copy .env file
+        run: cp .env.example .env
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-scripts
 

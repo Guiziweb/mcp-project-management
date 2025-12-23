@@ -22,11 +22,33 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class OAuthController extends AbstractController
 {
+    /**
+     * Allowed redirect URI patterns for security.
+     * MCP clients (Claude Desktop, Cursor, etc.) run locally.
+     */
+    private const ALLOWED_REDIRECT_PATTERNS = [
+        '#^https?://(localhost|127\.0\.0\.1)(:\d+)?(/.*)?$#',
+    ];
+
     public function __construct(
         private readonly JwtTokenValidator $tokenValidator,
         private readonly OAuthAuthorizationCodeStore $codeStore,
         private readonly GoogleAuthService $googleAuth,
     ) {
+    }
+
+    /**
+     * Validate that redirect_uri matches allowed patterns.
+     */
+    private function isRedirectUriAllowed(string $redirectUri): bool
+    {
+        foreach (self::ALLOWED_REDIRECT_PATTERNS as $pattern) {
+            if (preg_match($pattern, $redirectUri)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -104,6 +126,14 @@ final class OAuthController extends AbstractController
 
         if (!$clientId || !$redirectUri) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Missing client_id or redirect_uri'], 400);
+        }
+
+        // Security: validate redirect_uri against whitelist
+        if (!$this->isRedirectUriAllowed($redirectUri)) {
+            return new JsonResponse([
+                'error' => 'invalid_request',
+                'error_description' => 'Invalid redirect_uri. Only localhost URLs are allowed for MCP clients.',
+            ], 400);
         }
 
         $session = $request->getSession();

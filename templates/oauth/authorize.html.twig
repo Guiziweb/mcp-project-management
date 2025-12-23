@@ -3,20 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect Your Project Manager</title>
+    <title>Connect - MCP</title>
     {{ importmap('app') }}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
-        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 border border-slate-700">
-            <h1 class="text-xl font-semibold text-white text-center mb-2">Connect Your Project Manager</h1>
+<body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased font-sans">
+    <div class="min-h-screen flex">
+        <!-- Left Panel -->
+        <div class="hidden lg:flex lg:w-[45%] border-r border-neutral-800 flex-col justify-between p-10">
+            <div>
+                <!-- Logo -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-neutral-900" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold">MCP</span>
+                </div>
+            </div>
 
-            {% if google_user_name is defined and google_user_name %}
-                <p class="text-slate-400 text-sm text-center mb-6">{{ google_user_email }}</p>
-            {% endif %}
+            <div class="max-w-sm">
+                <h1 class="text-3xl font-semibold tracking-tight mb-4">
+                    Connect your project manager
+                </h1>
+                <p class="text-neutral-500 leading-relaxed">
+                    Link Redmine, Jira, or Monday.com to enable time tracking and issue management through Claude, Cursor, or any MCP-compatible assistant.
+                </p>
+            </div>
 
-            {{ component('ProviderCredentialsForm') }}
+            <div class="text-sm text-neutral-600">
+                Credentials are encrypted end-to-end and never stored.
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="flex-1 flex items-center justify-center p-6 lg:p-12">
+            <div class="w-full max-w-md">
+                <!-- Mobile logo -->
+                <div class="lg:hidden flex items-center gap-2.5 mb-10">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-neutral-900" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold">MCP</span>
+                </div>
+
+                <!-- User -->
+                {% if google_user_email is defined and google_user_email %}
+                <div class="mb-8 pb-8 border-b border-neutral-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-neutral-800 rounded-full flex items-center justify-center text-sm font-medium">
+                            {{ google_user_email|first|upper }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium truncate">{{ google_user_name|default('User') }}</p>
+                            <p class="text-sm text-neutral-500 truncate">{{ google_user_email }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Form -->
+                {{ component('ProviderCredentialsForm') }}
+            </div>
         </div>
     </div>
 </body>

@@ -8,7 +8,9 @@ use App\Domain\Activity\ActivityPort;
 use App\Domain\Attachment\AttachmentReadPort;
 use App\Domain\Issue\Issue;
 use App\Domain\Issue\IssueReadPort;
+use App\Domain\Issue\IssueWritePort;
 use App\Domain\Project\ProjectPort;
+use App\Domain\Status\StatusPort;
 use App\Domain\TimeEntry\TimeEntry;
 use App\Domain\TimeEntry\TimeEntryReadPort;
 use App\Domain\TimeEntry\TimeEntryWritePort;
@@ -34,11 +36,13 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 #[AsAlias(UserPort::class)]
 #[AsAlias(ProjectPort::class)]
 #[AsAlias(IssueReadPort::class)]
+#[AsAlias(IssueWritePort::class)]
 #[AsAlias(TimeEntryReadPort::class)]
 #[AsAlias(TimeEntryWritePort::class)]
 #[AsAlias(ActivityPort::class)]
+#[AsAlias(StatusPort::class)]
 #[AsAlias(AttachmentReadPort::class)]
-final readonly class CurrentUserService implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, AttachmentReadPort
+final readonly class CurrentUserService implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort
 {
     public function __construct(
         private Security $security,
@@ -102,11 +106,11 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueR
         return $this->getCurrentAdapter()->getProjects();
     }
 
-    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null): array
+    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null, string|int|null $statusId = null): array
     {
         $this->assertCanQueryUser($userId);
 
-        return $this->getCurrentAdapter()->getIssues($projectId, $limit, $userId);
+        return $this->getCurrentAdapter()->getIssues($projectId, $limit, $userId, $statusId);
     }
 
     public function getIssue(int $issueId): Issue
@@ -197,5 +201,60 @@ final readonly class CurrentUserService implements UserPort, ProjectPort, IssueR
         }
 
         $adapter->deleteTimeEntry($timeEntryId);
+    }
+
+    public function getStatuses(): array
+    {
+        $adapter = $this->getCurrentAdapter();
+
+        if ($adapter instanceof StatusPort) {
+            return $adapter->getStatuses();
+        }
+
+        return [];
+    }
+
+    public function addComment(int $issueId, string $comment, bool $private = false): void
+    {
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof IssueWritePort) {
+            throw new \RuntimeException('This provider does not support writing issues.');
+        }
+
+        $adapter->addComment($issueId, $comment, $private);
+    }
+
+    public function updateComment(int $commentId, string $comment): void
+    {
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof IssueWritePort) {
+            throw new \RuntimeException('This provider does not support writing issues.');
+        }
+
+        $adapter->updateComment($commentId, $comment);
+    }
+
+    public function deleteComment(int $commentId): void
+    {
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof IssueWritePort) {
+            throw new \RuntimeException('This provider does not support writing issues.');
+        }
+
+        $adapter->deleteComment($commentId);
+    }
+
+    public function updateIssue(int $issueId, ?int $statusId = null): void
+    {
+        $adapter = $this->getCurrentAdapter();
+
+        if (!$adapter instanceof IssueWritePort) {
+            throw new \RuntimeException('This provider does not support writing issues.');
+        }
+
+        $adapter->updateIssue($issueId, $statusId);
     }
 }

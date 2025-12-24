@@ -120,11 +120,11 @@ final class OAuthController extends AbstractController
     #[Route('/oauth/authorize', name: 'oauth_authorize', methods: ['GET'])]
     public function authorize(Request $request): Response
     {
-        $clientId = $request->query->get('client_id');
-        $redirectUri = $request->query->get('redirect_uri');
-        $state = $request->query->get('state');
+        $clientId = $request->query->getString('client_id');
+        $redirectUri = $request->query->getString('redirect_uri');
+        $state = $request->query->getString('state');
 
-        if (!$clientId || !$redirectUri) {
+        if ('' === $clientId || '' === $redirectUri) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Missing client_id or redirect_uri'], 400);
         }
 

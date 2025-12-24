@@ -34,4 +34,12 @@ interface IssueWritePort
      * @param int $commentId Comment identifier
      */
     public function deleteComment(int $commentId): void;
+
+    /**
+     * Update an issue.
+     *
+     * @param int      $issueId  Issue identifier
+     * @param int|null $statusId New status ID (optional)
+     */
+    public function updateIssue(int $issueId, ?int $statusId = null): void;
 }

@@ -7,6 +7,7 @@ namespace App\Domain\Issue;
 use App\Domain\Attachment\Attachment;
 use App\Domain\Comment\Comment;
 use App\Domain\Project\Project;
+use App\Domain\Status\Status;
 
 /**
  * Represents an issue/task in the time tracking system.
@@ -16,6 +17,7 @@ readonly class Issue
     /**
      * @param array<Comment>    $comments
      * @param array<Attachment> $attachments
+     * @param array<Status>     $allowedStatuses Statuses the issue can transition to (workflow-aware)
      */
     public function __construct(
         public int $id,
@@ -28,6 +30,7 @@ readonly class Issue
         public ?string $priority = null,
         public array $comments = [],
         public array $attachments = [],
+        public array $allowedStatuses = [],
     ) {
     }
 }

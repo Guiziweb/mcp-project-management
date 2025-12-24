@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Domain\Activity\ActivityPort;
+use App\Domain\Issue\IssueWritePort;
+use App\Domain\Status\StatusPort;
 use App\Domain\TimeEntry\TimeEntryWritePort;
 use App\Infrastructure\Adapter\AdapterFactory;
 use App\Infrastructure\Security\User;
 use App\Resources\ActivitiesResource;
+use App\Resources\StatusesResource;
 use App\Tools\DeleteTimeEntryTool;
 use App\Tools\GetAttachmentTool;
 use App\Tools\GetIssueDetailsTool;
@@ -16,6 +19,7 @@ use App\Tools\ListIssuesTool;
 use App\Tools\ListProjectsTool;
 use App\Tools\ListTimeEntriesTool;
 use App\Tools\LogTimeTool;
+use App\Tools\UpdateIssueTool;
 use App\Tools\UpdateTimeEntryTool;
 use Mcp\Server;
 use Mcp\Server\Session\FileSessionStore;
@@ -35,6 +39,8 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * Tools and resources are registered dynamically based on the provider's capabilities:
  * - ActivityPort: activities resource (Redmine only)
+ * - StatusPort: statuses resource (Redmine only)
+ * - IssueWritePort: update_issue (Redmine only)
  * - TimeEntryWritePort: log_time, update_time_entry, delete_time_entry (not Monday)
  */
 final class McpController extends AbstractController
@@ -65,6 +71,8 @@ final class McpController extends AbstractController
         // Create adapter to check capabilities
         $adapter = $this->adapterFactory->createForUser($user->getCredential());
         $supportsActivity = $adapter instanceof ActivityPort;
+        $supportsStatus = $adapter instanceof StatusPort;
+        $supportsIssueWrite = $adapter instanceof IssueWritePort;
         $supportsTimeEntryWrite = $adapter instanceof TimeEntryWritePort;
 
         // Convert Symfony Request to PSR-7
@@ -86,6 +94,9 @@ final class McpController extends AbstractController
         $builder->addTool([ListTimeEntriesTool::class, 'listTimeEntries']);
         $builder->addTool([GetAttachmentTool::class, 'getAttachment']);
 
+        // Build instructions based on capabilities
+        $instructions = [];
+
         // Activity resource (Redmine only) - exposed as resource for LLM to read proactively
         if ($supportsActivity) {
             $builder->addResource(
@@ -95,10 +106,25 @@ final class McpController extends AbstractController
                 description: 'List of available time entry activities for logging time',
                 mimeType: 'application/json'
             );
-            $builder->setInstructions(
-                'When logging time with log_time, you need an activity_id. '.
-                'Read the "provider://activities" resource to get the list of available activities with their IDs.'
+            $instructions[] = 'When logging time with log_time, you need an activity_id. '.
+                'Read the "provider://activities" resource to get the list of available activities with their IDs.';
+        }
+
+        // Status resource (Redmine only) - exposed as resource for LLM to read proactively
+        if ($supportsStatus) {
+            $builder->addResource(
+                [StatusesResource::class, 'getStatuses'],
+                uri: 'provider://statuses',
+                name: 'statuses',
+                description: 'List of available issue statuses with their IDs',
+                mimeType: 'application/json'
             );
+            $instructions[] = 'Read "provider://statuses" to get status IDs for filtering issues or updating issue status.';
+        }
+
+        // Issue write tools (Redmine only)
+        if ($supportsIssueWrite) {
+            $builder->addTool([UpdateIssueTool::class, 'updateIssue']);
         }
 
         // Time entry write tools (Redmine, Jira - not Monday)
@@ -106,6 +132,11 @@ final class McpController extends AbstractController
             $builder->addTool([LogTimeTool::class, 'logTime']);
             $builder->addTool([UpdateTimeEntryTool::class, 'updateTimeEntry']);
             $builder->addTool([DeleteTimeEntryTool::class, 'deleteTimeEntry']);
+        }
+
+        // Set combined instructions
+        if (!empty($instructions)) {
+            $builder->setInstructions(implode("\n", $instructions));
         }
 
         $server = $builder->build();

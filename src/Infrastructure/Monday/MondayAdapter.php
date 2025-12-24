@@ -13,14 +13,18 @@ use App\Domain\TimeEntry\TimeEntry;
 use App\Domain\TimeEntry\TimeEntryReadPort;
 use App\Domain\User\User;
 use App\Domain\User\UserPort;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
  * Monday.com adapter.
  *
+ * Created dynamically by AdapterFactory with user credentials.
+ *
  * Only implements TimeEntryReadPort (not Write) because Monday API
  * doesn't support logging time programmatically.
  */
+#[Autoconfigure(autowire: false)]
 class MondayAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, AttachmentReadPort
 {
     private ?User $currentUser = null;
@@ -78,8 +82,9 @@ class MondayAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryRe
     /**
      * @return array<Issue>
      */
-    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null): array
+    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null, string|int|null $statusId = null): array
     {
+        // Note: Monday.com doesn't have a standard status concept, statusId is ignored
         // Ensure we have the current user ID for filtering
         $this->getCurrentUser();
         $filterUserId = null !== $userId ? (string) $userId : $this->currentUserId;

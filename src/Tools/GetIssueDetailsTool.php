@@ -51,23 +51,33 @@ final class GetIssueDetailsTool
                 'created_on' => $attachment->createdOn?->format('Y-m-d H:i:s'),
             ], $issue->attachments);
 
+            $issueData = [
+                'id' => $issue->id,
+                'title' => $issue->title,
+                'description' => $issue->description,
+                'status' => $issue->status,
+                'project' => [
+                    'id' => $issue->project->id,
+                    'name' => $issue->project->name,
+                ],
+                'assignee' => $issue->assignee,
+                'type' => $issue->type,
+                'priority' => $issue->priority,
+                'comments' => $comments,
+                'attachments' => $attachments,
+            ];
+
+            // Include allowed_statuses only if available (workflow-aware providers)
+            if (!empty($issue->allowedStatuses)) {
+                $issueData['allowed_statuses'] = array_map(fn ($status) => [
+                    'id' => $status->id,
+                    'name' => $status->name,
+                ], $issue->allowedStatuses);
+            }
+
             return [
                 'success' => true,
-                'issue' => [
-                    'id' => $issue->id,
-                    'title' => $issue->title,
-                    'description' => $issue->description,
-                    'status' => $issue->status,
-                    'project' => [
-                        'id' => $issue->project->id,
-                        'name' => $issue->project->name,
-                    ],
-                    'assignee' => $issue->assignee,
-                    'type' => $issue->type,
-                    'priority' => $issue->priority,
-                    'comments' => $comments,
-                    'attachments' => $attachments,
-                ],
+                'issue' => $issueData,
             ];
         } catch (\Throwable $e) {
             return [

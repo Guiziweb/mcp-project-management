@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Monday;
 
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -11,7 +12,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * Monday.com GraphQL API client.
  *
  * Returns raw API responses - normalization is handled by Normalizers.
+ * Created dynamically by AdapterFactory with user credentials.
  */
+#[Autoconfigure(autowire: false)]
 class MondayClient
 {
     private const API_URL = 'https://api.monday.com/v2';

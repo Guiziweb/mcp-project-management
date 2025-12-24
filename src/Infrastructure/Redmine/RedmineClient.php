@@ -7,10 +7,14 @@ namespace App\Infrastructure\Redmine;
 use Psr\Log\LoggerInterface;
 use Redmine\Client\NativeCurlClient;
 use Redmine\Http\HttpFactory;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Client for Redmine API.
+ *
+ * Created dynamically by AdapterFactory with user credentials.
  */
+#[Autoconfigure(autowire: false)]
 class RedmineClient
 {
     public function __construct(
@@ -96,6 +100,19 @@ class RedmineClient
     {
         $client = $this->getClient();
         $api = $client->getApi('time_entry_activity');
+
+        return $api->list();
+    }
+
+    /**
+     * Get issue statuses.
+     *
+     * @return array<string, mixed>
+     */
+    public function getIssueStatuses(): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('issue_status');
 
         return $api->list();
     }
@@ -314,5 +331,33 @@ class RedmineClient
     public function deleteJournal(int $journalId): void
     {
         $this->updateJournal($journalId, '');
+    }
+
+    /**
+     * Update an issue.
+     *
+     * @param int      $issueId  Issue ID
+     * @param int|null $statusId New status ID (optional)
+     */
+    public function updateIssue(int $issueId, ?int $statusId = null): void
+    {
+        $params = [];
+
+        if (null !== $statusId) {
+            $params['status_id'] = $statusId;
+        }
+
+        if (empty($params)) {
+            throw new \InvalidArgumentException('At least one field must be provided to update');
+        }
+
+        $client = $this->getClient();
+        $api = $client->getApi('issue');
+
+        $result = $api->update($issueId, $params);
+
+        if (false === $result) {
+            throw new \RuntimeException('Failed to update issue');
+        }
     }
 }

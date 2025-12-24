@@ -14,11 +14,15 @@ use App\Domain\TimeEntry\TimeEntryReadPort;
 use App\Domain\TimeEntry\TimeEntryWritePort;
 use App\Domain\User\User;
 use App\Domain\User\UserPort;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
  * Jira Cloud adapter (no ActivityPort - Jira doesn't have activities).
+ *
+ * Created dynamically by AdapterFactory with user credentials.
  */
+#[Autoconfigure(autowire: false)]
 class JiraAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryReadPort, TimeEntryWritePort, AttachmentReadPort
 {
     private ?User $currentUser = null;
@@ -63,7 +67,7 @@ class JiraAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryRead
         );
     }
 
-    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null): array
+    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null, string|int|null $statusId = null): array
     {
         // Build JQL query
         $jqlParts = [];
@@ -74,7 +78,14 @@ class JiraAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryRead
 
         // Note: Jira uses accountId for user filtering, not integer IDs
         $jqlParts[] = 'assignee = currentUser()';
-        $jqlParts[] = 'status != Done';
+
+        // Status filter (null or 'open' = not done, 'closed' = done, '*' = all)
+        if (null === $statusId || 'open' === $statusId) {
+            $jqlParts[] = 'status != Done';
+        } elseif ('closed' === $statusId) {
+            $jqlParts[] = 'status = Done';
+        }
+        // '*' = no status filter
 
         $jql = implode(' AND ', $jqlParts).' ORDER BY updated DESC';
 

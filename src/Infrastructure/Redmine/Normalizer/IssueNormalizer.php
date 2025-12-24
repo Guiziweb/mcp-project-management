@@ -8,6 +8,7 @@ use App\Domain\Attachment\Attachment;
 use App\Domain\Comment\Comment;
 use App\Domain\Issue\Issue;
 use App\Domain\Project\Project;
+use App\Domain\Status\Status;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -60,6 +61,19 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             }
         }
 
+        // Denormalize allowed_statuses if present (Redmine 5.0+)
+        $allowedStatuses = [];
+        if (isset($issue['allowed_statuses']) && is_array($issue['allowed_statuses'])) {
+            foreach ($issue['allowed_statuses'] as $statusData) {
+                $allowedStatuses[] = $this->denormalizer->denormalize(
+                    $statusData,
+                    Status::class,
+                    $format,
+                    $context
+                );
+            }
+        }
+
         return new Issue(
             id: (int) ($issue['id'] ?? 0),
             title: (string) ($issue['subject'] ?? ''),
@@ -71,6 +85,7 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             priority: isset($issue['priority']['name']) ? (string) $issue['priority']['name'] : null,
             comments: $comments,
             attachments: $attachments,
+            allowedStatuses: $allowedStatuses,
         );
     }
 

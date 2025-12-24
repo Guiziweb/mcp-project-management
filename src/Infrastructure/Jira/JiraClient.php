@@ -10,10 +10,14 @@ use JiraCloud\Issue\IssueService;
 use JiraCloud\Issue\Worklog;
 use JiraCloud\Project\ProjectService;
 use JiraCloud\User\UserService;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Client for Jira Cloud API.
+ *
+ * Created dynamically by AdapterFactory with user credentials.
  */
+#[Autoconfigure(autowire: false)]
 class JiraClient
 {
     private ArrayConfiguration $configuration;

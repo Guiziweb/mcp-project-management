@@ -12,17 +12,23 @@ use App\Domain\Issue\IssueReadPort;
 use App\Domain\Issue\IssueWritePort;
 use App\Domain\Project\Project;
 use App\Domain\Project\ProjectPort;
+use App\Domain\Status\Status;
+use App\Domain\Status\StatusPort;
 use App\Domain\TimeEntry\TimeEntry;
 use App\Domain\TimeEntry\TimeEntryReadPort;
 use App\Domain\TimeEntry\TimeEntryWritePort;
 use App\Domain\User\User;
 use App\Domain\User\UserPort;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
  * Redmine adapter implementing all ports.
+ *
+ * Created dynamically by AdapterFactory with user credentials.
  */
-class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, AttachmentReadPort
+#[Autoconfigure(autowire: false)]
+class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort
 {
     private ?User $currentUser = null;
 
@@ -63,14 +69,14 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
         );
     }
 
-    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null): array
+    public function getIssues(?int $projectId = null, int $limit = 50, ?int $userId = null, string|int|null $statusId = null): array
     {
         $user = $this->getCurrentUser();
 
         $params = [
             'assigned_to_id' => $userId ?? $user->id,
             'limit' => $limit,
-            'status_id' => 'open',
+            'status_id' => $statusId ?? 'open',
         ];
 
         if (null !== $projectId) {
@@ -94,7 +100,7 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
     public function getIssue(int $issueId): Issue
     {
         $data = $this->redmineClient->getIssue($issueId, [
-            'include' => 'journals,attachments',
+            'include' => 'journals,attachments,allowed_statuses',
         ]);
 
         return $this->serializer->denormalize(
@@ -118,6 +124,22 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
                 ['provider' => 'redmine']
             ),
             $activities
+        );
+    }
+
+    public function getStatuses(): array
+    {
+        $data = $this->redmineClient->getIssueStatuses();
+        $statuses = $data['issue_statuses'] ?? [];
+
+        return array_map(
+            fn (array $status) => $this->serializer->denormalize(
+                $status,
+                Status::class,
+                null,
+                ['provider' => 'redmine']
+            ),
+            $statuses
         );
     }
 
@@ -247,5 +269,10 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
     public function deleteComment(int $commentId): void
     {
         $this->redmineClient->deleteJournal($commentId);
+    }
+
+    public function updateIssue(int $issueId, ?int $statusId = null): void
+    {
+        $this->redmineClient->updateIssue($issueId, $statusId);
     }
 }

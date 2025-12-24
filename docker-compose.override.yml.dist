@@ -1,0 +1,16 @@
+# Docker Compose override for development
+# Copy to docker-compose.override.yml (auto-loaded by docker compose)
+#
+# Usage: make dev
+
+services:
+  app:
+    build:
+      args:
+        APP_ENV: dev
+    volumes:
+      - ./src:/app/src:cached
+      - ./config:/app/config:cached
+      - ./templates:/app/templates:cached
+    environment:
+      APP_ENV: dev

@@ -83,6 +83,10 @@ yarn.lock
 /.build/
 ###< Build and deployment ###
 
+###> Docker ###
+docker-compose.override.yml
+###< Docker ###
+
 ###> OS generated files ###
 .DS_Store
 .DS_Store?

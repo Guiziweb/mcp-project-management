@@ -6,8 +6,12 @@
 # Default target
 .DEFAULT_GOAL := help
 
-dev: ## Setup complet développement
-	$(MAKE) install-dev
+dev: ## Dev avec Docker (volumes montés, hot reload)
+	@if [ ! -f docker-compose.override.yml ]; then \
+		cp docker-compose.override.yml.dist docker-compose.override.yml; \
+		echo "Created docker-compose.override.yml from template"; \
+	fi
+	docker compose up
 
 prod: ## Setup production (sans dev deps)
 	$(MAKE) install-prod clean-dev

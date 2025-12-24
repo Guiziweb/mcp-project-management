@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.5.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.4.0...v1.5.0) (2025-12-24)
+
+
+### Features
+
+* add status management, filtering and issue update ([aeef0e7](https://github.com/Guiziweb/mcp-project-management/commit/aeef0e7d2b92559eb0dc1083d49dd3253f789b20))
+* **tools:** add comment management tools ([d2efd27](https://github.com/Guiziweb/mcp-project-management/commit/d2efd2720adce6f05d9cca3c69a0285e7c234f6c))
+
+
+### Bug Fixes
+
+* **ci:** copy .env file for static-analysis job ([5e1aa37](https://github.com/Guiziweb/mcp-project-management/commit/5e1aa37f2ff9d2e8ac8c9ce766672eeecf52883d))
+* **oauth:** add redirect_uri whitelist validation ([6f4f0d5](https://github.com/Guiziweb/mcp-project-management/commit/6f4f0d56e58afc00f2c95bef460adcca8ed65614))
+
+
+### Code Refactoring
+
+* **oauth:** redesign connection screen ([c65efe5](https://github.com/Guiziweb/mcp-project-management/commit/c65efe50a6836e8af3ce904a5c3a0cc824efc15a))
+
+
+### Miscellaneous
+
+* add Docker dev workflow with volume mounts ([e685068](https://github.com/Guiziweb/mcp-project-management/commit/e685068d310c45d04a4e652dce7f79a56603dd7f))
+
 ## [1.4.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.3.0...v1.4.0) (2025-12-23)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.5.0...v1.6.0) (2025-12-30)
+
+
+### Features
+
+* add admin panel and multi-org support ([7492a43](https://github.com/Guiziweb/mcp-project-management/commit/7492a430807fd90050deb7808add76c79b284c35))
+
+
+### Bug Fixes
+
+* remove fixture config from .env.example ([e367ec3](https://github.com/Guiziweb/mcp-project-management/commit/e367ec338318ff6fecd2243f60e396b2e0329ee6))
+
 ## [1.5.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.4.0...v1.5.0) (2025-12-24)
 
 

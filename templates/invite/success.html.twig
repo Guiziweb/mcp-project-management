@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - MCP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased font-sans">
+    <div class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-lg text-center">
+            <div class="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+
+            <h1 class="text-2xl font-semibold mb-3">
+                {% if already_exists %}
+                    Welcome back!
+                {% else %}
+                    You're all set!
+                {% endif %}
+            </h1>
+
+            <p class="text-neutral-400 mb-8">
+                {% if already_exists %}
+                    Your account is already connected to {{ user.organization.name }}.
+                {% else %}
+                    Your account has been created and connected to {{ user.organization.name }}.
+                {% endif %}
+            </p>
+
+            <div class="bg-neutral-900 rounded-xl p-6 text-left mb-8">
+                <h2 class="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-4">Next Steps</h2>
+
+                <div class="space-y-4">
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 bg-neutral-800 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-medium">1</div>
+                        <div>
+                            <p class="font-medium">Add the MCP server to your IDE</p>
+                            <p class="text-sm text-neutral-500 mt-1">In Claude Code or Cursor, add this to your MCP config:</p>
+                            <pre class="mt-2 p-3 bg-neutral-950 rounded-lg text-sm overflow-x-auto"><code class="text-green-400">{
+  "mcpServers": {
+    "{{ user.organization.slug }}": {
+      "type": "http",
+      "url": "{{ app.request.schemeAndHttpHost }}/mcp"
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 bg-neutral-800 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-medium">2</div>
+                        <div>
+                            <p class="font-medium">Start using MCP</p>
+                            <p class="text-sm text-neutral-500 mt-1">Ask your assistant to list your issues or log time.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-sm text-neutral-500">You can close this window.</p>
+        </div>
+    </div>
+</body>
+</html>

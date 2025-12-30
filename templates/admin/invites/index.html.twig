@@ -1,0 +1,111 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Invite Links{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-semibold">Invite Links</h1>
+            <p class="text-neutral-500 mt-1">Manage user invitation links</p>
+        </div>
+        <a href="{{ path('admin_invites_create') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-900 font-medium rounded-lg hover:bg-neutral-200 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+            Create Link
+        </a>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-neutral-800">
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Link</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Label</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Uses</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Expires</th>
+                    <th class="px-6 py-4 text-right text-sm font-medium text-neutral-400">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-800">
+                {% for invite in invites %}
+                    {% set isExpired = invite.expiresAt < date() %}
+                    {% set isMaxedOut = invite.maxUses and invite.usesCount >= invite.maxUses %}
+                    {% set isValid = invite.active and not isExpired and not isMaxedOut %}
+                <tr class="hover:bg-neutral-800/30 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <code class="text-sm text-neutral-400 bg-neutral-800 px-2 py-1 rounded font-mono">
+                                {{ invite.token|slice(0, 8) }}...
+                            </code>
+                            <button onclick="navigator.clipboard.writeText('{{ url('invite_join', {token: invite.token}) }}'); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy', 2000)"
+                                    class="text-xs text-neutral-500 hover:text-white transition-colors">
+                                Copy
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if invite.label %}
+                            <span class="text-sm">{{ invite.label }}</span>
+                        {% else %}
+                            <span class="text-sm text-neutral-500">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if isValid %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                                Active
+                            </span>
+                        {% elseif isExpired %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                Expired
+                            </span>
+                        {% elseif isMaxedOut %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Exhausted
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-800 text-neutral-400">
+                                Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <span class="text-neutral-300">{{ invite.usesCount }}</span>
+                        {% if invite.maxUses %}
+                            <span class="text-neutral-500">/ {{ invite.maxUses }}</span>
+                        {% else %}
+                            <span class="text-neutral-500">/ ∞</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-neutral-500 text-sm">
+                        {{ invite.expiresAt|date('M j, Y') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="if(confirm('Delete this invite link?')) window.location='{{ path('admin_invites_delete', {token: invite.token}) }}'"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                            </svg>
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-neutral-500">
+                        No invite links yet.
+                        <a href="{{ path('admin_invites_create') }}" class="text-white hover:underline">Create one</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

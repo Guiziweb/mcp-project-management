@@ -17,29 +17,23 @@ services:
         resource: '../src/'
 
     # Tag all MCP tools
-    App\Tools\:
-        resource: '../src/Tools/'
+    App\Mcp\Application\Tool\:
+        resource: '../src/Mcp/Application/Tool/'
         tags: ['mcp.tool']
 
-    # JWT token validator (with encryption for embedded credentials)
-    App\Infrastructure\Security\JwtTokenValidator:
-        arguments:
-            $jwtSecret: '%env(JWT_SECRET)%'
-            $encryption: '@App\Infrastructure\Security\EncryptionService'
-
     # Google OAuth2 authentication service
-    App\Infrastructure\Security\GoogleAuthService:
+    App\Shared\Infrastructure\Security\GoogleAuthService:
         arguments:
             $googleClientId: '%env(GOOGLE_CLIENT_ID)%'
             $googleClientSecret: '%env(GOOGLE_CLIENT_SECRET)%'
             $redirectUri: '%env(APP_URL)%/oauth/google-callback'
 
     # Encryption service for sensitive data
-    App\Infrastructure\Security\EncryptionService:
+    App\Shared\Infrastructure\Security\EncryptionService:
         arguments:
             $encryptionKey: '%env(ENCRYPTION_KEY)%'
 
     # MCP Controller needs full container access for tool discovery
-    App\Controller\McpController:
+    App\Mcp\Infrastructure\Http\Controller\McpController:
         arguments:
             $serviceContainer: '@service_container'

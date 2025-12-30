@@ -1,0 +1,5 @@
+doctrine:
+    dbal:
+        # SQLite for fast tests
+        url: 'sqlite:///%kernel.project_dir%/var/test.db'
+        use_savepoints: true

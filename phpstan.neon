@@ -6,14 +6,20 @@ parameters:
         - vendor
     bootstrapFiles:
         - vendor/autoload.php
+    treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        # Redmine API library is not fully typed
+        # Redmine API library uses magic methods, not fully typed
         - '#Call to an undefined method Redmine\\Api::#'
 
         # League OAuth2 library type mismatch (AccessToken vs AccessTokenInterface)
         - '#Parameter \#1 \$token of method League\\OAuth2\\Client\\Provider\\AbstractProvider::getResourceOwner\(\) expects League\\OAuth2\\Client\\Token\\AccessToken, League\\OAuth2\\Client\\Token\\AccessTokenInterface given#'
 
         # Symfony Authenticator interface requires nullable return types even when not used
-        - '#Method App\\Infrastructure\\Security\\JwtAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
-        - '#Method App\\Infrastructure\\Security\\JwtAuthenticator::onAuthenticationFailure\(\) never returns null so it can be removed from the return type#'
- 
+        - '#Method App\\Mcp\\Infrastructure\\Security\\BearerTokenAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
+        - '#Method App\\Mcp\\Infrastructure\\Security\\BearerTokenAuthenticator::onAuthenticationFailure\(\) never returns null so it can be removed from the return type#'
+
+        # Doctrine entity IDs are assigned by the database
+        - '#Property App\\Admin\\Infrastructure\\Doctrine\\Entity\\.*::\$id \(int\|null\) is never assigned int#'
+
+        # Email is guaranteed non-empty by database constraint
+        - '#Method App\\Admin\\Infrastructure\\Doctrine\\Entity\\User::getUserIdentifier\(\) should return non-empty-string but returns string#'

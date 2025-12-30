@@ -1,6 +1,29 @@
 # Scan controllers for #[Route] attributes
-controllers:
+
+# Shared controllers (HealthController)
+shared_controllers:
     resource:
-        path: ../src/Controller/
-        namespace: App\Controller
+        path: ../src/Shared/Infrastructure/Http/Controller/
+        namespace: App\Shared\Infrastructure\Http\Controller
+    type: attribute
+
+# MCP controllers
+mcp_controllers:
+    resource:
+        path: ../src/Mcp/Infrastructure/Http/Controller/
+        namespace: App\Mcp\Infrastructure\Http\Controller
+    type: attribute
+
+# Admin controllers
+admin_controllers:
+    resource:
+        path: ../src/Admin/Infrastructure/Http/Controller/
+        namespace: App\Admin\Infrastructure\Http\Controller
+    type: attribute
+
+# OAuth controllers
+oauth_controllers:
+    resource:
+        path: ../src/OAuth/Infrastructure/Http/Controller/
+        namespace: App\OAuth\Infrastructure\Http\Controller
     type: attribute

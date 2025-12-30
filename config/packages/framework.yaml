@@ -3,7 +3,14 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    session:
+        cookie_secure: auto
+        cookie_httponly: true
+        cookie_samesite: lax
+
+    # Configure router to generate correct URLs in Docker
+    router:
+        default_uri: '%env(APP_URL)%'
 
     #esi: true
     #fragments: true

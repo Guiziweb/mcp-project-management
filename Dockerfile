@@ -8,11 +8,13 @@ RUN apk add --no-cache \
     git \
     unzip \
     libsodium-dev \
+    icu-dev \
+    sqlite-dev \
     nginx \
     supervisor
 
 # Install PHP extensions
-RUN docker-php-ext-install sodium
+RUN docker-php-ext-install sodium intl pdo_sqlite
 
 # Configure PHP-FPM to listen on TCP instead of socket
 RUN sed -i 's/listen = \/run\/php\/php8.4-fpm.sock/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf || \
@@ -59,7 +61,8 @@ EXPOSE 8080
 # Set APP_ENV as environment variable for runtime
 ENV APP_ENV=${APP_ENV}
 
-# Start: clear cache, then start supervisor (which manages nginx + php-fpm)
-CMD php bin/console cache:clear && \
+# Start: run migrations, clear cache, then start supervisor (which manages nginx + php-fpm)
+CMD php bin/console doctrine:migrations:migrate --no-interaction && \
+    php bin/console cache:clear && \
     chown -R www-data:www-data /app/var && \
     /usr/bin/supervisord -c /etc/supervisord.conf

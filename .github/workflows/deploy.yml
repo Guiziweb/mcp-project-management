@@ -14,18 +14,15 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           APP_URL: ${{ secrets.APP_URL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-          ALLOWED_EMAIL_DOMAINS: ${{ secrets.ALLOWED_EMAIL_DOMAINS }}
-          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: APP_SECRET,JWT_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY,ALLOWED_EMAIL_DOMAINS,ALLOWED_EMAILS
+          envs: APP_SECRET,APP_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,ENCRYPTION_KEY
           script: |
             cd /opt/mcp-project-management
 
@@ -35,17 +32,14 @@ jobs:
 
             # Create .env from template with secrets
             export APP_SECRET="$APP_SECRET"
-            export JWT_SECRET="$JWT_SECRET"
             export APP_URL="$APP_URL"
             export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
             export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
             export ENCRYPTION_KEY="$ENCRYPTION_KEY"
-            export ALLOWED_EMAIL_DOMAINS="$ALLOWED_EMAIL_DOMAINS"
-            export ALLOWED_EMAILS="$ALLOWED_EMAILS"
 
             envsubst < .env.template > .env
 
-            # Deploy with Docker
+            # Deploy with Docker (migrations run automatically at container start)
             make deploy
 
             # Show deployment status

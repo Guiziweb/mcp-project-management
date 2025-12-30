@@ -1,0 +1,86 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Organization{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold">Organization</h1>
+        <p class="text-neutral-500 mt-1">{{ organization.name }}</p>
+    </div>
+
+    <div class="space-y-6">
+        <!-- General Info -->
+        <div class="bg-neutral-900 rounded-xl border border-neutral-800 p-6">
+            <h2 class="text-lg font-medium mb-4">General</h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-sm text-neutral-500 mb-1">Name</p>
+                    <p class="font-medium">{{ organization.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500 mb-1">Slug</p>
+                    <p class="font-medium font-mono text-sm">{{ organization.slug }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500 mb-1">Created</p>
+                    <p class="font-medium">{{ organization.createdAt|date('M j, Y') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Provider -->
+        <div class="bg-neutral-900 rounded-xl border border-neutral-800 p-6">
+            <h2 class="text-lg font-medium mb-4">Provider</h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-sm text-neutral-500 mb-1">Type</p>
+                    <p class="font-medium">{{ organization.providerType|capitalize }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500 mb-1">URL</p>
+                    {% if organization.providerUrl %}
+                        <a href="{{ organization.providerUrl }}" target="_blank" class="font-medium text-blue-400 hover:text-blue-300">
+                            {{ organization.providerUrl }}
+                        </a>
+                    {% else %}
+                        <p class="text-neutral-500 italic">Not configured</p>
+                    {% endif %}
+                </div>
+            </div>
+            <p class="mt-4 text-sm text-neutral-500">
+                Contact your administrator to modify provider settings.
+            </p>
+        </div>
+
+        <!-- Enabled Tools -->
+        <div class="bg-neutral-900 rounded-xl border border-neutral-800 p-6">
+            <h2 class="text-lg font-medium mb-2">Enabled Tools</h2>
+            <p class="text-sm text-neutral-500 mb-4">
+                Select which MCP tools are available to users in your organization.
+            </p>
+
+            {{ form_start(form) }}
+                <div class="space-y-2">
+                    {% for child in form.enabledTools %}
+                        <label class="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800 transition-colors">
+                            {{ form_widget(child, {'attr': {'class': 'w-4 h-4 rounded border-neutral-600 bg-neutral-700 text-white focus:ring-white focus:ring-offset-neutral-900'}}) }}
+                            <span class="text-sm">{{ child.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <p class="mt-3 text-sm text-neutral-500">
+                    Leave all unchecked to enable all tools.
+                </p>
+
+                <div class="mt-4">
+                    <button type="submit" class="px-6 py-2 bg-white text-neutral-900 font-medium rounded-lg hover:bg-neutral-200 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+{% endblock %}

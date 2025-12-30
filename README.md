@@ -1,15 +1,15 @@
-# MCP Project Management
+# salut
 
 Multi-provider MCP server for project management and time tracking. Connects AI assistants (Claude Desktop/Code, Cursor, etc.) to Redmine, Jira Cloud, Monday.com, and Trello with OAuth2.
 
 ## Supported Providers
 
-| Provider | Projects | Project Write | Issues | Issue Write | Time Read | Time Write | Attachments | Attachment Write | Activities |
-|----------|:--------:|:-------------:|:------:|:-----------:|:---------:|:----------:|:-----------:|:----------------:|:----------:|
-| Redmine  | x | | x | | x | x | x | | required for log_time |
-| Jira Cloud | x | | x | | x | x | x | | |
-| Monday.com | x | | x | | x | | x | | |
-| Trello | | | | | | | | | |
+| Provider | Projects | Project Write | Issues | Issue Write | Time Read | Time Write | Attachments | Attachment Write | Activities | Statuses |
+|----------|:--------:|:-------------:|:------:|:-----------:|:---------:|:----------:|:-----------:|:----------------:|:----------:|:--------:|
+| Redmine  | x | | x | x | x | x | x | | required for log_time | x |
+| Jira Cloud | x | | x | | x | x | x | | | |
+| Monday.com | x | | x | | x | | x | | | |
+| Trello | | | | | | | | | | |
 
 ## MCP Tools
 
@@ -20,12 +20,22 @@ Tools are dynamically exposed based on provider capabilities:
 | `list_projects` | List accessible projects | x | x | x |
 | `list_issues` | Issues assigned to user | x | x | x |
 | `get_issue_details` | Issue details (description, comments, attachments) | x | x | x |
+| `update_issue` | Update issue status | x | | |
 | `list_time_entries` | Time entries for a date range | x | x | x |
 | `get_attachment` | Download an attachment | x | x | x |
 | `log_time` | Log time on an issue | x | x | |
 | `update_time_entry` | Update a time entry | x | x | |
 | `delete_time_entry` | Delete a time entry | x | x | |
 | `list_activities` | Time tracking activity types | x | | |
+
+## MCP Resources
+
+Resources provide reference data for tools:
+
+| Resource | Description | Redmine | Jira | Monday |
+|----------|-------------|:-------:|:----:|:------:|
+| `provider://statuses` | Available issue statuses (for `update_issue`, `list_issues`) | x | | |
+| `provider://activities` | Time tracking activity types (for `log_time`) | x | | |
 
 ## Quick Start
 
@@ -49,7 +59,7 @@ Create `.mcp.json` in your project or `~/.claude/.mcp.json`:
 1. First request → Google Sign-In redirect
 2. Choose provider (Redmine/Jira/Monday)
 3. Enter credentials (URL + API key)
-4. JWT token generated with encrypted credentials
+4. Token stored in database with encrypted credentials
 
 ## Architecture
 
@@ -61,7 +71,7 @@ flowchart TB
     end
 
     subgraph MCP["MCP Server"]
-        Auth["Google OAuth → JWT"]
+        Auth["Google OAuth + DB Tokens"]
         Tools["MCP Tools"]
 
         subgraph Domain["Domain Models"]
@@ -84,7 +94,7 @@ flowchart TB
         Monday
     end
 
-    Clients -->|HTTP + JWT| Tools
+    Clients -->|HTTP + Bearer Token| Tools
     Tools --> Domain
     Domain --> Adapters
     RedmineAdapter --> Redmine
@@ -94,7 +104,7 @@ flowchart TB
 
 ### Principles
 
-- **No database**: Credentials embedded in JWT
+- **Database-backed tokens**: Credentials encrypted and stored in DB for instant revocation
 - **Dynamic capabilities**: Tools filtered by provider (e.g., Monday doesn't have `log_time`)
 
 ## Installation
@@ -127,7 +137,6 @@ symfony server:start --port=8080
 ```bash
 # Required
 APP_URL=https://your-server.com
-JWT_SECRET=your-jwt-secret
 ENCRYPTION_KEY=base64-encoded-sodium-key
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxx
@@ -157,26 +166,18 @@ make deploy           # Docker rebuild
 ### Bot Token (automation)
 
 ```bash
-# Redmine
+# Create bot token (requires existing organization)
 php bin/console app:create-bot \
-  --provider=redmine \
+  --organization=my-org-slug \
   --email=bot@company.com \
-  --url=https://redmine.company.com \
   --api-key=xxx
 
-# Jira
+# For Jira, add provider email
 php bin/console app:create-bot \
-  --provider=jira \
+  --organization=my-jira-org \
   --email=bot@company.com \
-  --url=https://company.atlassian.net \
   --api-key=xxx \
   --provider-email=jira-user@company.com
-
-# Monday (no --url needed)
-php bin/console app:create-bot \
-  --provider=monday \
-  --email=bot@company.com \
-  --api-key=xxx
 ```
 
 ## Project Structure

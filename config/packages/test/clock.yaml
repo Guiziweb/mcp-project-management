@@ -1,0 +1,4 @@
+services:
+    Psr\Clock\ClockInterface:
+        class: Symfony\Component\Clock\MockClock
+        arguments: ['2024-01-15 10:00:00']

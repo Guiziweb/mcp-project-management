@@ -1,0 +1,10 @@
+{% use 'form_div_layout.html.twig' %}
+
+{# Style form errors consistently with flash messages #}
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        {% for error in errors %}
+            <p class="mt-2 text-sm text-red-400">{{ error.message }}</p>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

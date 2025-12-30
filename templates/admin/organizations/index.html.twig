@@ -1,0 +1,80 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Organizations{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-semibold">Organizations</h1>
+            <p class="text-neutral-500 mt-1">Manage all organizations on the platform</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-neutral-800">
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Organization</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Provider</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Users</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Created</th>
+                    <th class="px-6 py-4 text-right text-sm font-medium text-neutral-400">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-800">
+                {% for org in organizations %}
+                <tr class="hover:bg-neutral-800/30 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-neutral-800 rounded-lg flex items-center justify-center text-lg font-semibold">
+                                {{ org.name|first|upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium">{{ org.name }}</p>
+                                <p class="text-xs text-neutral-500">{{ org.slug }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                            {% if org.providerType == 'redmine' %}bg-red-500/10 text-red-400 border border-red-500/20
+                            {% elseif org.providerType == 'jira' %}bg-blue-500/10 text-blue-400 border border-blue-500/20
+                            {% else %}bg-purple-500/10 text-purple-400 border border-purple-500/20{% endif %}">
+                            {{ org.providerType|capitalize }}
+                        </span>
+                        {% if org.providerUrl %}
+                            <p class="text-xs text-neutral-500 mt-1 truncate max-w-[200px]">{{ org.providerUrl }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-neutral-300">{{ org.users|length }}</span>
+                        <span class="text-neutral-500">users</span>
+                    </td>
+                    <td class="px-6 py-4 text-neutral-500 text-sm">
+                        {{ org.createdAt|date('M j, Y') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="{{ path('admin_organizations_edit', {id: org.id}) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
+                            </svg>
+                            Edit
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-neutral-500">
+                        No organizations found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

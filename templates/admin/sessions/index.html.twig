@@ -1,0 +1,125 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Sessions{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-semibold">Sessions</h1>
+            <p class="text-neutral-500 mt-1">Active MCP connections</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-neutral-800">
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">User</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Client</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Last Activity</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-400">Created</th>
+                    <th class="px-6 py-4 text-right text-sm font-medium text-neutral-400">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-800">
+                {% set now = date() %}
+                {% for session in sessions %}
+                    {% set isActive = date(session.lastActivityAt).timestamp > (now.timestamp - 300) %}
+                <tr class="hover:bg-neutral-800/30 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-neutral-800 rounded-full flex items-center justify-center text-sm font-medium">
+                                {{ session.user.email|first|upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium">{{ session.user.email }}</p>
+                                <p class="text-xs text-neutral-500">{{ session.user.organization.name }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if session.clientInfo %}
+                            <span class="text-sm text-neutral-300">{{ session.clientInfo }}</span>
+                        {% else %}
+                            <span class="text-sm text-neutral-500">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if isActive %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-800 text-neutral-400">
+                                Idle
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-neutral-500 text-sm">
+                        {{ session.lastActivityAt|date('M j, H:i:s') }}
+                    </td>
+                    <td class="px-6 py-4 text-neutral-500 text-sm">
+                        {{ session.createdAt|date('M j, H:i') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="if(confirm('Terminate this session?')) window.location='{{ path('admin_sessions_delete', {id: session.id}) }}'"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Terminate
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-neutral-500">
+                        No active sessions
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if sessions.pageCount > 1 %}
+    <div class="flex items-center justify-between mt-6">
+        <p class="text-sm text-neutral-500">
+            Showing {{ sessions.currentPageOffsetStart + 1 }} to {{ sessions.currentPageOffsetEnd }} of {{ sessions.totalItemCount }} sessions
+        </p>
+        <nav class="flex items-center gap-1">
+            {% if sessions.currentPageNumber > 1 %}
+                <a href="{{ path('admin_sessions', {page: sessions.currentPageNumber - 1}) }}"
+                   class="px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors">
+                    Previous
+                </a>
+            {% endif %}
+
+            {% for page in sessions.paginationData.pagesInRange %}
+                {% if page == sessions.currentPageNumber %}
+                    <span class="px-3 py-2 text-sm bg-white text-neutral-900 rounded-lg font-medium">{{ page }}</span>
+                {% else %}
+                    <a href="{{ path('admin_sessions', {page: page}) }}"
+                       class="px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors">
+                        {{ page }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if sessions.currentPageNumber < sessions.pageCount %}
+                <a href="{{ path('admin_sessions', {page: sessions.currentPageNumber + 1}) }}"
+                   class="px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors">
+                    Next
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -8,14 +8,22 @@ services:
     container_name: mcp-project-management
     ports:
       - "8090:8080"
+    volumes:
+      - app-data:/app/var
     environment:
       APP_ENV: ${APP_ENV:-prod}
       APP_SECRET: ${APP_SECRET}
       APP_URL: ${APP_URL}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///%kernel.project_dir%/var/data.db}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      JWT_SECRET: ${JWT_SECRET}
-      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS}
-      ALLOWED_EMAILS: ${ALLOWED_EMAILS}
+      FIXTURE_ORG_NAME: ${FIXTURE_ORG_NAME:-}
+      FIXTURE_ORG_SLUG: ${FIXTURE_ORG_SLUG:-}
+      FIXTURE_PROVIDER_TYPE: ${FIXTURE_PROVIDER_TYPE:-}
+      FIXTURE_PROVIDER_URL: ${FIXTURE_PROVIDER_URL:-}
+      FIXTURE_ADMIN_EMAIL: ${FIXTURE_ADMIN_EMAIL:-}
     restart: unless-stopped
+
+volumes:
+  app-data:

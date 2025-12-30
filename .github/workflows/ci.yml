@@ -18,8 +18,8 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, sodium
           tools: composer:v2, php-cs-fixer, phpstan
 
       - name: Get composer cache directory
@@ -62,7 +62,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, json, pdo, session, simplexml, tokenizer, xmlreader, xmlwriter, zip
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, sodium, dom, filter, json, pdo, session, simplexml, tokenizer, xmlreader, xmlwriter, zip
           tools: composer:v2
           coverage: pcov
 

@@ -30,36 +30,46 @@
         "php": ">=8.2",
         "ext-ctype": "*",
         "ext-sodium": "*",
-        "firebase/php-jwt": "^6.11.1",
+        "doctrine/dbal": "^3",
+        "doctrine/doctrine-bundle": "^2.18",
+        "doctrine/doctrine-migrations-bundle": "^3.7",
+        "doctrine/orm": "^3.6",
         "kbsali/redmine-api": "^2.8",
+        "knplabs/knp-paginator-bundle": "^6.10",
         "laminas/laminas-httphandlerrunner": "^2.13",
         "league/oauth2-google": "^4.1",
         "lesstif/jira-cloud-restapi": "^1.10",
         "mcp/sdk": "^0.1.0",
         "nyholm/psr7": "^1.8.2",
         "nyholm/psr7-server": "^1.1",
-        "symfony/asset-mapper": "7.3.*",
-        "symfony/console": "7.3.*",
-        "symfony/dotenv": "7.3.*",
+        "symfony/asset-mapper": "7.4.*",
+        "symfony/clock": "7.4.*",
+        "symfony/console": "7.4.*",
+        "symfony/dotenv": "7.4.*",
+        "symfony/expression-language": "7.4.*",
         "symfony/flex": "^2.10",
-        "symfony/form": "7.3.*",
-        "symfony/framework-bundle": "7.3.*",
-        "symfony/http-client": "7.3.*",
+        "symfony/form": "7.4.*",
+        "symfony/framework-bundle": "7.4.*",
+        "symfony/http-client": "7.4.*",
         "symfony/monolog-bundle": "^3.11.1",
-        "symfony/psr-http-message-bridge": "7.3.*",
-        "symfony/runtime": "7.3.*",
-        "symfony/security-bundle": "7.3.*",
-        "symfony/serializer": "7.3.*",
-        "symfony/twig-bundle": "7.3.*",
+        "symfony/psr-http-message-bridge": "7.4.*",
+        "symfony/runtime": "7.4.*",
+        "symfony/security-bundle": "7.4.*",
+        "symfony/serializer": "7.4.*",
+        "symfony/translation": "7.4.*",
+        "symfony/twig-bundle": "7.4.*",
         "symfony/ux-live-component": "^2.31",
-        "symfony/validator": "7.3.*",
-        "symfony/yaml": "7.3.*"
+        "symfony/validator": "7.4.*",
+        "symfony/yaml": "7.4.*"
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "^3.92.3",
         "phpstan/phpstan": "^2.1.33",
         "phpunit/phpunit": "^10.5.60",
-        "symfony/web-profiler-bundle": "7.3.*"
+        "symfony/browser-kit": "7.4.*",
+        "symfony/css-selector": "7.4.*",
+        "symfony/web-profiler-bundle": "7.4.*"
     },
     "config": {
         "allow-plugins": {
@@ -110,7 +120,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.3.*"
+            "require": "7.4.*"
         }
     }
 }

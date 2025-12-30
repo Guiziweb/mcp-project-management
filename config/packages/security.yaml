@@ -5,28 +5,65 @@ security:
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        app_user_provider:
-            id: App\Infrastructure\Security\UserProvider
+        # Token-based user provider for MCP API
+        mcp_user_provider:
+            id: App\Mcp\Infrastructure\Security\UserProvider
+
+        # Database user provider for admin
+        db_user_provider:
+            entity:
+                class: App\Admin\Infrastructure\Doctrine\Entity\User
+                property: email
 
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        # Admin login - no auth required
+        admin_login:
+            pattern: ^/admin/login
+            security: false
+
+        # Admin signup flow - no auth required (handles /signup, /signup/callback, /signup/wizard)
+        admin_signup:
+            pattern: ^/admin/signup
+            security: false
+
+        # Admin firewall - session based with Google OAuth
+        admin:
+            pattern: ^/admin
+            lazy: true
+            provider: db_user_provider
+            custom_authenticators:
+                - App\Admin\Infrastructure\Security\AdminAuthenticator
+            entry_point: App\Admin\Infrastructure\Security\AdminAuthenticator
+            logout:
+                path: admin_logout
+                target: admin_login
+
+        # MCP API firewall - stateless Bearer token
         main:
             lazy: true
             stateless: true
-            provider: app_user_provider
+            provider: mcp_user_provider
             custom_authenticators:
-                - App\Infrastructure\Security\JwtAuthenticator
-            entry_point: App\Infrastructure\Security\JwtAuthenticator
+                - App\Mcp\Infrastructure\Security\BearerTokenAuthenticator
+            entry_point: App\Mcp\Infrastructure\Security\BearerTokenAuthenticator
+
+    # Role hierarchy: SUPER_ADMIN has all ORG_ADMIN permissions
+    role_hierarchy:
+        ROLE_ORG_ADMIN: ROLE_USER
+        ROLE_SUPER_ADMIN: ROLE_ORG_ADMIN
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
+        - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin/signup, roles: PUBLIC_ACCESS }
+        - { path: ^/admin/settings, roles: ROLE_USER }
+        - { path: ^/admin, roles: ROLE_ORG_ADMIN }
         - { path: ^/mcp, roles: ROLE_USER }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:
     security:

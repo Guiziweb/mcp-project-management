@@ -1,7 +1,7 @@
 # Makefile pour mcp-project-management
 # Usage: make [target]
 
-.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy lint-container lint-twig lint
+.PHONY: install-dev install-prod test static-analysis cs-fix cs-check code-quality validate cache-clear clean clean-dev help dev prod docker-build docker-up docker-down docker-rebuild docker-logs deploy lint-container lint-twig lint db-migrate db-diff db-status db-reset
 
 # Default target
 .DEFAULT_GOAL := help
@@ -27,6 +27,21 @@ test: ## Lancer tous les tests
 
 test-coverage: ## Tests avec couverture de code
 	vendor/bin/phpunit --testdox --coverage-text --coverage-clover=coverage.xml
+
+# Database
+db-migrate: ## Exécuter les migrations
+	php bin/console doctrine:migrations:migrate --no-interaction
+
+db-diff: ## Générer une migration depuis les changements d'entités
+	php bin/console doctrine:migrations:diff
+
+db-status: ## Voir l'état des migrations
+	php bin/console doctrine:migrations:status
+
+db-reset: ## Reset la DB (drop + migrate)
+	php bin/console doctrine:database:drop --force --if-exists
+	php bin/console doctrine:database:create
+	php bin/console doctrine:migrations:migrate --no-interaction
 
 phpstan: ## Analyse statique PHPStan
 	vendor/bin/phpstan analyse src

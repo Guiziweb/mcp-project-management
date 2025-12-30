@@ -1,0 +1,78 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ path('admin_users') }}" class="inline-flex items-center gap-2 text-neutral-400 hover:text-white mb-4 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+            </svg>
+            Back to Users
+        </a>
+        <h1 class="text-2xl font-semibold">Edit User</h1>
+        <p class="text-neutral-500 mt-1">{{ user.email }}</p>
+    </div>
+
+    <!-- Form -->
+    {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+        <div class="bg-neutral-900 rounded-xl border border-neutral-800 p-6 space-y-6">
+            <!-- Email (readonly) -->
+            <div>
+                <label class="block text-sm font-medium text-neutral-300 mb-2">Email</label>
+                <input type="email" value="{{ user.email }}" disabled
+                       class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-400 cursor-not-allowed">
+                <p class="mt-2 text-sm text-neutral-500">Email cannot be changed</p>
+            </div>
+
+            <!-- Roles -->
+            <div>
+                <label class="block text-sm font-medium text-neutral-300 mb-2">Role</label>
+                <div class="space-y-2">
+                    {% for child in form.roles %}
+                        <label class="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg border border-neutral-700 hover:border-neutral-600 cursor-pointer transition-colors">
+                            {{ form_widget(child, {'attr': {'class': 'w-4 h-4 rounded border-neutral-600 bg-neutral-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 focus:ring-offset-neutral-900'}}) }}
+                            <span class="text-sm">{{ child.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Enabled Tools -->
+            {% if form.enabledTools is defined %}
+            <div>
+                <label class="block text-sm font-medium text-neutral-300 mb-2">Enabled Tools</label>
+                <p class="text-sm text-neutral-500 mb-3">Leave empty to inherit all tools from organization</p>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for child in form.enabledTools %}
+                        <label class="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg border border-neutral-700 hover:border-neutral-600 cursor-pointer transition-colors">
+                            {{ form_widget(child, {'attr': {'class': 'w-4 h-4 rounded border-neutral-600 bg-neutral-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 focus:ring-offset-neutral-900'}}) }}
+                            <span class="text-sm">{{ child.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-4">
+            <button type="button"
+                    onclick="if(confirm('Are you sure you want to delete this user?')) window.location='{{ path('admin_users_delete', {id: user.id}) }}'"
+                    class="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                Delete user
+            </button>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('admin_users') }}" class="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-white text-neutral-900 font-medium rounded-lg hover:bg-neutral-200 transition-colors">
+                    Save changes
+                </button>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

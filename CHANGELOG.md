@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/Guiziweb/mcp-project-management/compare/v1.6.0...v1.6.1) (2025-12-30)
+
+
+### Bug Fixes
+
+* remove undefined cache pools from doctrine prod config ([4f97ca2](https://github.com/Guiziweb/mcp-project-management/commit/4f97ca23169bcab98ee6e0ee2b4dd2f976421623))
+
 ## [1.6.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.5.0...v1.6.0) (2025-12-30)
 
 

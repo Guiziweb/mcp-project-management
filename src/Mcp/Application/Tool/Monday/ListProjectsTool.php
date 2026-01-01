@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Mcp\Application\Tool;
+namespace App\Mcp\Application\Tool\Monday;
 
-use App\Mcp\Domain\Port\ProjectPort;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,12 +12,12 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final readonly class ListProjectsTool
 {
     public function __construct(
-        private ProjectPort $adapter,
+        private AdapterHolder $adapterHolder,
     ) {
     }
 
     /**
-     * List all projects the current user has access to.
+     * List all boards the current user has access to.
      *
      * @return array<string, mixed>
      */
@@ -25,7 +25,8 @@ final readonly class ListProjectsTool
     public function listProjects(): array
     {
         try {
-            $projects = $this->adapter->getProjects();
+            $adapter = $this->adapterHolder->getMonday();
+            $projects = $adapter->getProjects();
 
             return [
                 'success' => true,

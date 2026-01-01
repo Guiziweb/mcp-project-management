@@ -61,7 +61,6 @@ security:
     access_control:
         - { path: ^/admin/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin/signup, roles: PUBLIC_ACCESS }
-        - { path: ^/admin/settings, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_ORG_ADMIN }
         - { path: ^/mcp, roles: ROLE_USER }
 

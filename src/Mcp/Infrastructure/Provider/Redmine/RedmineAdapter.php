@@ -7,6 +7,7 @@ namespace App\Mcp\Infrastructure\Provider\Redmine;
 use App\Mcp\Domain\Model\Activity;
 use App\Mcp\Domain\Model\Issue;
 use App\Mcp\Domain\Model\Project;
+use App\Mcp\Domain\Model\ProjectMember;
 use App\Mcp\Domain\Model\ProviderUser;
 use App\Mcp\Domain\Model\Status;
 use App\Mcp\Domain\Model\TimeEntry;
@@ -14,6 +15,7 @@ use App\Mcp\Domain\Port\ActivityPort;
 use App\Mcp\Domain\Port\AttachmentReadPort;
 use App\Mcp\Domain\Port\IssueReadPort;
 use App\Mcp\Domain\Port\IssueWritePort;
+use App\Mcp\Domain\Port\ProjectMemberPort;
 use App\Mcp\Domain\Port\ProjectPort;
 use App\Mcp\Domain\Port\StatusPort;
 use App\Mcp\Domain\Port\TimeEntryReadPort;
@@ -28,12 +30,12 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
  * Created dynamically by AdapterFactory with user credentials.
  */
 #[Autoconfigure(autowire: false)]
-class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort
+class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort, ProjectMemberPort
 {
     private ?ProviderUser $currentUser = null;
 
     public function __construct(
-        private readonly RedmineClient $redmineClient,
+        private readonly RedmineClientInterface $redmineClient,
         private readonly DenormalizerInterface $serializer,
     ) {
     }
@@ -111,10 +113,10 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
         );
     }
 
-    public function getActivities(): array
+    public function getProjectActivities(int $projectId): array
     {
-        $data = $this->redmineClient->getTimeEntryActivities();
-        $activities = $data['time_entry_activities'] ?? [];
+        $data = $this->redmineClient->getProjectActivities($projectId);
+        $activities = $data['project']['time_entry_activities'] ?? [];
 
         return array_map(
             fn (array $activity) => $this->serializer->denormalize(
@@ -142,12 +144,7 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
             $statuses
         );
     }
-
-    public function requiresActivity(): bool
-    {
-        return true;
-    }
-
+    
     public function logTime(
         int $issueId,
         int $seconds,
@@ -176,7 +173,7 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
         $issue = $this->getIssue($issueId);
         $user = $this->getCurrentUser();
 
-        $activities = $this->getActivities();
+        $activities = $this->getProjectActivities($issue->project->id);
         $activity = array_values(array_filter(
             $activities,
             fn (Activity $a) => $a->id === $activityId
@@ -271,8 +268,35 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
         $this->redmineClient->deleteJournal($commentId);
     }
 
-    public function updateIssue(int $issueId, ?int $statusId = null): void
+    public function updateIssue(int $issueId, ?int $statusId = null, ?int $doneRatio = null, ?int $assignedToId = null): void
     {
-        $this->redmineClient->updateIssue($issueId, $statusId);
+        $this->redmineClient->updateIssue($issueId, $statusId, $doneRatio, $assignedToId);
+    }
+
+    public function getProjectMembers(int $projectId): array
+    {
+        $data = $this->redmineClient->getProjectMembers($projectId);
+        $memberships = $data['memberships'] ?? [];
+
+        $members = [];
+        foreach ($memberships as $membership) {
+            // Skip group memberships, only include users
+            if (!isset($membership['user'])) {
+                continue;
+            }
+
+            $roles = array_map(
+                fn (array $role) => $role['name'] ?? '',
+                $membership['roles'] ?? []
+            );
+
+            $members[] = new ProjectMember(
+                id: (int) $membership['user']['id'],
+                name: (string) $membership['user']['name'],
+                roles: $roles,
+            );
+        }
+
+        return $members;
     }
 }

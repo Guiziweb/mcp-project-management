@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Admin\Infrastructure\Service;
 
+use App\Admin\Infrastructure\Doctrine\Entity\User;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Server\Builder;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 
 /**
@@ -14,7 +16,7 @@ use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 class ToolRegistry
 {
     /**
-     * @var array<string, string> Tool name => Tool description
+     * @var array<string, array{description: string, callable: array{class-string, string}, provider: string}>
      */
     private array $tools = [];
 
@@ -31,13 +33,29 @@ class ToolRegistry
     }
 
     /**
+     * Register tools for a user based on their permissions.
+     */
+    public function registerTools(Builder $builder, User $user, string $provider): void
+    {
+        foreach ($this->tools as $name => $tool) {
+            if ($tool['provider'] !== $provider) {
+                continue;
+            }
+
+            if ($user->hasToolEnabled($name)) {
+                $builder->addTool($tool['callable']);
+            }
+        }
+    }
+
+    /**
      * @return array<string, string> Tool name => description (for ChoiceField)
      */
     public function getToolChoices(): array
     {
         $choices = [];
-        foreach ($this->tools as $name => $description) {
-            $label = $description ?: $this->humanizeName($name);
+        foreach ($this->tools as $name => $tool) {
+            $label = $tool['description'] ?: $this->humanizeName($name);
             $choices[$label] = $name;
         }
         ksort($choices);
@@ -53,25 +71,57 @@ class ToolRegistry
         return array_keys($this->tools);
     }
 
+    /**
+     * @return array<string> List of tool names for a specific provider
+     */
+    public function getToolNamesByProvider(string $provider): array
+    {
+        return array_keys(array_filter(
+            $this->tools,
+            fn (array $tool) => $tool['provider'] === $provider
+        ));
+    }
+
     private function discoverToolsFromClass(object $tool): void
     {
         $reflection = new \ReflectionClass($tool);
+        $provider = $this->extractProvider($reflection->getName());
 
         foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             $attributes = $method->getAttributes(McpTool::class);
 
             foreach ($attributes as $attribute) {
                 $instance = $attribute->newInstance();
-                $name = $instance->name;
-                $description = $instance->description ?? '';
-                $this->tools[$name] = $description;
+                $this->tools[$instance->name] = [
+                    'description' => $instance->description ?? '',
+                    'callable' => [$reflection->getName(), $method->getName()],
+                    'provider' => $provider,
+                ];
             }
         }
     }
 
+    /**
+     * Extract provider from class namespace.
+     * App\Mcp\Application\Tool\Redmine\ListIssuesTool -> redmine
+     */
+    private function extractProvider(string $className): string
+    {
+        if (str_contains($className, '\\Redmine\\')) {
+            return 'redmine';
+        }
+        if (str_contains($className, '\\Jira\\')) {
+            return 'jira';
+        }
+        if (str_contains($className, '\\Monday\\')) {
+            return 'monday';
+        }
+
+        return 'unknown';
+    }
+
     private function humanizeName(string $name): string
     {
-        // list_issues -> List Issues
         return ucwords(str_replace('_', ' ', $name));
     }
 }

@@ -2,46 +2,55 @@
 
 declare(strict_types=1);
 
-namespace App\Mcp\Application\Tool;
+namespace App\Mcp\Application\Tool\Monday;
 
-use App\Mcp\Domain\Service\TimeEntryService;
+use App\Mcp\Domain\Model\TimeEntry;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Capability\Attribute\Schema;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
 final class ListTimeEntriesTool
 {
     public function __construct(
-        private readonly TimeEntryService $timeEntryService,
+        private readonly AdapterHolder $adapterHolder,
     ) {
     }
 
     /**
-     * Get time entries with optional date filtering and total calculation.
+     * Get time tracking entries with optional date filtering and total calculation.
      *
      * Perfect for monthly time tracking and work hour analysis.
      * Returns daily, weekly, and project breakdowns.
      *
-     * @param string|null $from    Start date (YYYY-MM-DD)
-     * @param string|null $to      End date (YYYY-MM-DD)
-     * @param int|null    $user_id Redmine user ID to query (admin-only, null = current user)
+     * @param string|null $from Start date (YYYY-MM-DD)
+     * @param string|null $to   End date (YYYY-MM-DD)
      *
      * @return array<string, mixed>
      */
     #[McpTool(name: 'list_time_entries')]
     public function listTimeEntries(
+        #[Schema(pattern: '^\d{4}-\d{2}-\d{2}$')]
         ?string $from = null,
+        #[Schema(pattern: '^\d{4}-\d{2}-\d{2}$')]
         ?string $to = null,
-        ?int $user_id = null,
     ): array {
         try {
+            $adapter = $this->adapterHolder->getMonday();
+
             // Parse dates
             $fromDate = $from ? new \DateTime($from) : new \DateTime('-30 days');
             $toDate = $to ? new \DateTime($to) : new \DateTime('today');
 
-            // Get aggregated data
-            $byDay = $this->timeEntryService->getEntriesByDay($fromDate, $toDate, $user_id);
-            $byProject = $this->timeEntryService->getEntriesByProject($fromDate, $toDate, $user_id);
+            // Get time entries
+            $entries = $adapter->getTimeEntries($fromDate, $toDate);
+
+            // Aggregate by day
+            $byDay = $this->aggregateByDay($entries);
+
+            // Aggregate by project
+            $byProject = $this->aggregateByProject($entries);
 
             // Calculate totals
             $totalHours = 0.0;
@@ -70,7 +79,6 @@ final class ListTimeEntriesTool
                             'project' => $entry->issue->project->name,
                             'hours' => $entry->getHours(),
                             'comment' => $entry->comment,
-                            'activity' => $entry->activity?->name,
                         ],
                         $day['entries']
                     ),
@@ -108,5 +116,64 @@ final class ListTimeEntriesTool
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Aggregate time entries by day.
+     *
+     * @param TimeEntry[] $entries
+     *
+     * @return array<string, array{date: string, hours: float, entries: TimeEntry[]}>
+     */
+    private function aggregateByDay(array $entries): array
+    {
+        $byDay = [];
+        foreach ($entries as $entry) {
+            $dateKey = $entry->spentAt->format('Y-m-d');
+
+            if (!isset($byDay[$dateKey])) {
+                $byDay[$dateKey] = [
+                    'date' => $dateKey,
+                    'hours' => 0.0,
+                    'entries' => [],
+                ];
+            }
+
+            $byDay[$dateKey]['hours'] += $entry->getHours();
+            $byDay[$dateKey]['entries'][] = $entry;
+        }
+
+        ksort($byDay);
+
+        return $byDay;
+    }
+
+    /**
+     * Aggregate time entries by project.
+     *
+     * @param TimeEntry[] $entries
+     *
+     * @return array<int, array{project_id: int, project_name: string, hours: float, entries: TimeEntry[]}>
+     */
+    private function aggregateByProject(array $entries): array
+    {
+        $byProject = [];
+        foreach ($entries as $entry) {
+            $projectId = $entry->issue->project->id;
+
+            if (!isset($byProject[$projectId])) {
+                $byProject[$projectId] = [
+                    'project_id' => $projectId,
+                    'project_name' => $entry->issue->project->name,
+                    'hours' => 0.0,
+                    'entries' => [],
+                ];
+            }
+
+            $byProject[$projectId]['hours'] += $entry->getHours();
+            $byProject[$projectId]['entries'][] = $entry;
+        }
+
+        return $byProject;
     }
 }

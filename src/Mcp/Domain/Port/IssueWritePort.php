@@ -38,8 +38,10 @@ interface IssueWritePort
     /**
      * Update an issue.
      *
-     * @param int      $issueId  Issue identifier
-     * @param int|null $statusId New status ID (optional)
+     * @param int      $issueId      Issue identifier
+     * @param int|null $statusId     New status ID (optional)
+     * @param int|null $doneRatio    Percentage of completion 0-100 (optional)
+     * @param int|null $assignedToId User ID to assign the issue to (optional)
      */
-    public function updateIssue(int $issueId, ?int $statusId = null): void;
+    public function updateIssue(int $issueId, ?int $statusId = null, ?int $doneRatio = null, ?int $assignedToId = null): void;
 }

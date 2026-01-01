@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Mcp\Application\Tool;
+namespace App\Mcp\Application\Tool\Monday;
 
-use App\Mcp\Domain\Port\IssueReadPort;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,29 +12,26 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class ListIssuesTool
 {
     public function __construct(
-        private readonly IssueReadPort $adapter,
+        private readonly AdapterHolder $adapterHolder,
     ) {
     }
 
     /**
-     * List issues assigned to a user from ONE specific project.
+     * List items assigned to the current user.
      *
-     * Use list_projects tool first to get the list of available projects,
-     * then ASK THE USER which project they want to see issues for,
-     * and call this tool with that single project_id.
+     * Use list_projects tool first to get the list of available boards.
      *
-     * @param int|null $project_id Filter by project ID (use list_projects tool to get valid project IDs)
-     * @param int      $limit      Maximum number of issues to return (default: 25)
-     * @param int|null $user_id    Redmine user ID to query (admin-only, null = current user)
-     * @param mixed    $status_id  Filter by status ID (read provider://statuses for available IDs)
+     * @param int|null $project_id Filter by board ID (use list_projects tool to get valid board IDs)
+     * @param int      $limit      Maximum number of items to return (default: 25)
      *
      * @return array<string, mixed>
      */
     #[McpTool(name: 'list_issues')]
-    public function listIssues(?int $project_id = null, int $limit = 25, ?int $user_id = null, mixed $status_id = null): array
+    public function listIssues(?int $project_id = null, int $limit = 25): array
     {
         try {
-            $issues = $this->adapter->getIssues($project_id, $limit, $user_id, $status_id);
+            $adapter = $this->adapterHolder->getMonday();
+            $issues = $adapter->getIssues($project_id, $limit);
 
             return [
                 'success' => true,

@@ -61,7 +61,6 @@ final class BearerTokenAuthenticator extends AbstractAuthenticator implements Au
                 orgConfig: $credentials['org_config'],
                 userCredentials: $credentials['user_credentials'],
                 role: $platformUser->isAdmin() ? 'admin' : 'user',
-                isBot: false,
             );
 
             return new SelfValidatingPassport(

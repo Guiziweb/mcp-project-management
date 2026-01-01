@@ -88,16 +88,29 @@ class DoctrineSessionStore implements SessionStoreInterface
                 throw new \LogicException('Cannot create session without a current user. Call setCurrentUser() first.');
             }
 
-            $session = new McpSession($id, $this->currentUser, $data);
+            // Extract client name from MCP session data (set by InitializeHandler)
+            $clientName = $this->extractClientName($data);
 
-            if (null !== $this->clientInfo) {
-                $session->setClientInfo($this->clientInfo);
+            // Delete old sessions for same user + client (replace instead of accumulate)
+            if (null !== $clientName) {
+                $this->sessionRepository->deleteByUserAndClientName($this->currentUser, $clientName);
             }
+
+            $session = new McpSession($id, $this->currentUser, $data);
+            $session->setClientInfo($clientName);
 
             $this->em->persist($session);
         } else {
             $session->setData($data);
             $session->touch();
+
+            // Update clientInfo if not set yet (initialize just happened)
+            if (null === $session->getClientInfo()) {
+                $clientName = $this->extractClientName($data);
+                if (null !== $clientName) {
+                    $session->setClientInfo($clientName);
+                }
+            }
         }
 
         // Also update user's last seen
@@ -108,6 +121,21 @@ class DoctrineSessionStore implements SessionStoreInterface
         $this->em->flush();
 
         return true;
+    }
+
+    /**
+     * Extract client name from MCP session data.
+     * The InitializeHandler stores client_info with name and version.
+     */
+    private function extractClientName(string $data): ?string
+    {
+        try {
+            $decoded = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+
+            return $decoded['client_info']['name'] ?? null;
+        } catch (\JsonException) {
+            return null;
+        }
     }
 
     public function destroy(Uuid $id): bool

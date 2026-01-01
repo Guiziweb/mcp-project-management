@@ -114,11 +114,6 @@ class JiraAdapter implements UserPort, ProjectPort, IssueReadPort, TimeEntryRead
         );
     }
 
-    public function requiresActivity(): bool
-    {
-        return false;
-    }
-
     public function logTime(
         int $issueId,
         int $seconds,

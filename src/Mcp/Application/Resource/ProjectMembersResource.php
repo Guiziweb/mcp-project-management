@@ -9,7 +9,7 @@ use Mcp\Schema\Content\TextResourceContents;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class StatusesResource
+final class ProjectMembersResource
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -17,26 +17,28 @@ final class StatusesResource
     }
 
     /**
-     * Get available issue statuses as a resource.
+     * Get project members as a resource.
+     *
+     * @param string $project_id The project ID
      */
-    public function getStatuses(): TextResourceContents
+    public function getProjectMembers(string $project_id): TextResourceContents
     {
         $adapter = $this->adapterHolder->getRedmine();
-        $statuses = $adapter->getStatuses();
+        $members = $adapter->getProjectMembers((int) $project_id);
 
         $data = array_map(
-            fn ($status) => [
-                'id' => $status->id,
-                'name' => $status->name,
-                'is_closed' => $status->isClosed,
+            fn ($member) => [
+                'id' => $member->id,
+                'name' => $member->name,
+                'roles' => $member->roles,
             ],
-            $statuses
+            $members
         );
 
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         return new TextResourceContents(
-            uri: 'provider://statuses',
+            uri: 'provider://projects/'.$project_id.'/members',
             mimeType: 'application/json',
             text: $json
         );

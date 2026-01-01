@@ -77,6 +77,24 @@ class McpSessionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Delete sessions for a user with matching client name.
+     * Used to replace old sessions when a client reconnects.
+     *
+     * @return int Number of deleted sessions
+     */
+    public function deleteByUserAndClientName(User $user, string $clientName): int
+    {
+        return $this->createQueryBuilder('s')
+            ->delete()
+            ->where('s.user = :user')
+            ->andWhere('s.clientInfo = :clientName')
+            ->setParameter('user', $user)
+            ->setParameter('clientName', $clientName)
+            ->getQuery()
+            ->execute();
+    }
+
+    /**
      * Delete expired sessions.
      *
      * @return int Number of deleted sessions

@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
  * Created dynamically by AdapterFactory with user credentials.
  */
 #[Autoconfigure(autowire: false)]
-class RedmineClient
+class RedmineClient implements RedmineClientInterface
 {
     public function __construct(
         private readonly string $redmineUrl,
@@ -89,19 +89,6 @@ class RedmineClient
         $api = $client->getApi('project');
 
         return $api->list(['membership' => true]);
-    }
-
-    /**
-     * Get time entry activities.
-     *
-     * @return array<string, mixed>
-     */
-    public function getTimeEntryActivities(): array
-    {
-        $client = $this->getClient();
-        $api = $client->getApi('time_entry_activity');
-
-        return $api->list();
     }
 
     /**
@@ -336,15 +323,25 @@ class RedmineClient
     /**
      * Update an issue.
      *
-     * @param int      $issueId  Issue ID
-     * @param int|null $statusId New status ID (optional)
+     * @param int      $issueId      Issue ID
+     * @param int|null $statusId     New status ID (optional)
+     * @param int|null $doneRatio    Percentage of completion 0-100 (optional)
+     * @param int|null $assignedToId User ID to assign the issue to (optional)
      */
-    public function updateIssue(int $issueId, ?int $statusId = null): void
+    public function updateIssue(int $issueId, ?int $statusId = null, ?int $doneRatio = null, ?int $assignedToId = null): void
     {
         $params = [];
 
         if (null !== $statusId) {
             $params['status_id'] = $statusId;
+        }
+
+        if (null !== $doneRatio) {
+            $params['done_ratio'] = $doneRatio;
+        }
+
+        if (null !== $assignedToId) {
+            $params['assigned_to_id'] = $assignedToId;
         }
 
         if (empty($params)) {
@@ -359,5 +356,35 @@ class RedmineClient
         if (false === $result) {
             throw new \RuntimeException('Failed to update issue');
         }
+    }
+
+    /**
+     * Get project members (memberships).
+     *
+     * @param int $projectId Project ID
+     *
+     * @return array<string, mixed>
+     */
+    public function getProjectMembers(int $projectId): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('membership');
+
+        return $api->listByProject($projectId, ['limit' => 100]);
+    }
+
+    /**
+     * Get time entry activities for a specific project.
+     *
+     * @param int $projectId Project ID
+     *
+     * @return array<string, mixed>
+     */
+    public function getProjectActivities(int $projectId): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('project');
+
+        return $api->show($projectId, ['include' => ['time_entry_activities']]);
     }
 }

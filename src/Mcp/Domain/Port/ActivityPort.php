@@ -9,9 +9,9 @@ use App\Mcp\Domain\Model\Activity;
 interface ActivityPort
 {
     /**
-     * Get available activities for time tracking.
+     * Get available activities for a specific project.
      *
      * @return Activity[]
      */
-    public function getActivities(): array;
+    public function getProjectActivities(int $projectId): array;
 }

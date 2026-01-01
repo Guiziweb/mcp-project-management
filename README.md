@@ -184,19 +184,24 @@ php bin/console app:create-bot \
 
 ```
 src/
-├── Domain/
-│   ├── Model/          # Issue, Project, TimeEntry, User, etc.
-│   ├── Port/           # Interfaces (IssuePort, TimeEntryReadPort, etc.)
-│   └── Service/        # Domain services
-├── Infrastructure/
-│   ├── Adapter/        # AdapterFactory, CurrentUserService
-│   ├── Redmine/        # RedmineAdapter, RedmineClient, Normalizers
-│   ├── Jira/           # JiraAdapter, JiraClient, Normalizers
-│   ├── Monday/         # MondayAdapter, MondayClient, Normalizers
-│   ├── Security/       # JWT, OAuth, Encryption
-│   └── Web/            # Forms, Components
-├── Tools/              # MCP Tools (ListIssuesTool, LogTimeTool, etc.)
-└── Controller/         # McpController, OAuthController
+├── Mcp/
+│   ├── Domain/
+│   │   ├── Model/      # Issue, Project, TimeEntry, User, etc.
+│   │   └── Port/       # Interfaces (IssueReadPort, TimeEntryWritePort, etc.)
+│   ├── Application/
+│   │   ├── Tool/       # Provider-specific MCP Tools
+│   │   │   ├── Redmine/  # 12 tools (full read/write)
+│   │   │   ├── Jira/     # 6 tools (read + log time)
+│   │   │   └── Monday/   # 5 tools (read only)
+│   │   └── Resource/   # MCP Resources (Redmine only)
+│   └── Infrastructure/
+│       ├── Adapter/    # AdapterFactory, AdapterHolder
+│       └── Provider/
+│           ├── Redmine/  # RedmineAdapter, RedmineClient
+│           ├── Jira/     # JiraAdapter, JiraClient
+│           └── Monday/   # MondayAdapter, MondayClient
+├── OAuth/              # OAuth server (authorization, tokens)
+└── Admin/              # Admin interface
 ```
 
 ## License

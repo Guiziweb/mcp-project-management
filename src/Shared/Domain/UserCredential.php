@@ -29,7 +29,6 @@ final readonly class UserCredential
         public array $orgConfig = [],
         public array $userCredentials = [],
         public string $role = 'user',
-        public bool $isBot = false,
     ) {
     }
 

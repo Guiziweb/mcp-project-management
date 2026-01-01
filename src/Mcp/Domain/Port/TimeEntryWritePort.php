@@ -15,11 +15,6 @@ use App\Mcp\Domain\Model\TimeEntry;
 interface TimeEntryWritePort
 {
     /**
-     * Whether this adapter requires an activity ID when logging time.
-     */
-    public function requiresActivity(): bool;
-
-    /**
      * Log time on an issue.
      *
      * @param int                  $issueId  Issue identifier

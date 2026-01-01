@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Mcp\Application\Tool;
+namespace App\Mcp\Application\Tool\Jira;
 
-use App\Mcp\Domain\Port\IssueReadPort;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 final class GetIssueDetailsTool
 {
     public function __construct(
-        private readonly IssueReadPort $adapter,
+        private readonly AdapterHolder $adapterHolder,
     ) {
     }
 
@@ -30,7 +30,8 @@ final class GetIssueDetailsTool
     public function getIssueDetails(int $issue_id): array
     {
         try {
-            $issue = $this->adapter->getIssue($issue_id);
+            $adapter = $this->adapterHolder->getJira();
+            $issue = $adapter->getIssue($issue_id);
 
             // Format comments
             $comments = array_map(fn ($comment) => [
@@ -51,33 +52,23 @@ final class GetIssueDetailsTool
                 'created_on' => $attachment->createdOn?->format('Y-m-d H:i:s'),
             ], $issue->attachments);
 
-            $issueData = [
-                'id' => $issue->id,
-                'title' => $issue->title,
-                'description' => $issue->description,
-                'status' => $issue->status,
-                'project' => [
-                    'id' => $issue->project->id,
-                    'name' => $issue->project->name,
-                ],
-                'assignee' => $issue->assignee,
-                'type' => $issue->type,
-                'priority' => $issue->priority,
-                'comments' => $comments,
-                'attachments' => $attachments,
-            ];
-
-            // Include allowed_statuses only if available (workflow-aware providers)
-            if (!empty($issue->allowedStatuses)) {
-                $issueData['allowed_statuses'] = array_map(fn ($status) => [
-                    'id' => $status->id,
-                    'name' => $status->name,
-                ], $issue->allowedStatuses);
-            }
-
             return [
                 'success' => true,
-                'issue' => $issueData,
+                'issue' => [
+                    'id' => $issue->id,
+                    'title' => $issue->title,
+                    'description' => $issue->description,
+                    'status' => $issue->status,
+                    'project' => [
+                        'id' => $issue->project->id,
+                        'name' => $issue->project->name,
+                    ],
+                    'assignee' => $issue->assignee,
+                    'type' => $issue->type,
+                    'priority' => $issue->priority,
+                    'comments' => $comments,
+                    'attachments' => $attachments,
+                ],
             ];
         } catch (\Throwable $e) {
             return [

@@ -4,30 +4,32 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Resource;
 
-use App\Mcp\Domain\Port\ActivityPort;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Schema\Content\TextResourceContents;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class ActivitiesResource
+final class ProjectActivitiesResource
 {
     public function __construct(
-        private readonly ActivityPort $adapter,
+        private readonly AdapterHolder $adapterHolder,
     ) {
     }
 
     /**
-     * Get available time entry activities as a resource.
+     * Get project activities as a resource.
+     *
+     * @param string $project_id The project ID
      */
-    public function getActivities(): TextResourceContents
+    public function getProjectActivities(string $project_id): TextResourceContents
     {
-        $activities = $this->adapter->getActivities();
+        $adapter = $this->adapterHolder->getRedmine();
+        $activities = $adapter->getProjectActivities((int) $project_id);
 
         $data = array_map(
             fn ($activity) => [
                 'id' => $activity->id,
                 'name' => $activity->name,
-                'is_default' => $activity->isDefault,
             ],
             $activities
         );
@@ -35,7 +37,7 @@ final class ActivitiesResource
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         return new TextResourceContents(
-            uri: 'provider://activities',
+            uri: 'provider://projects/'.$project_id.'/activities',
             mimeType: 'application/json',
             text: $json
         );

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Mcp\Application\Tool;
+namespace App\Mcp\Application\Tool\Monday;
 
-use App\Mcp\Domain\Port\AttachmentReadPort;
+use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
@@ -23,12 +23,12 @@ final class GetAttachmentTool
     ];
 
     public function __construct(
-        private readonly AttachmentReadPort $adapter,
+        private readonly AdapterHolder $adapterHolder,
     ) {
     }
 
     /**
-     * Download and display an attachment from Redmine.
+     * Download and display an attachment (asset) from Monday.
      *
      * Returns the attachment content. For images, returns the image data that can be displayed.
      * For other files, returns information about the file.
@@ -39,8 +39,10 @@ final class GetAttachmentTool
     public function getAttachment(int $attachment_id): CallToolResult
     {
         try {
+            $adapter = $this->adapterHolder->getMonday();
+
             // Get attachment metadata
-            $attachment = $this->adapter->getAttachment($attachment_id);
+            $attachment = $adapter->getAttachment($attachment_id);
 
             $filename = $attachment['filename'];
             $contentType = $attachment['content_type'];
@@ -49,7 +51,7 @@ final class GetAttachmentTool
             // Check if it's an image
             if (in_array($contentType, self::SUPPORTED_IMAGE_TYPES, true)) {
                 // Download the image content
-                $content = $this->adapter->downloadAttachment($attachment_id);
+                $content = $adapter->downloadAttachment($attachment_id);
 
                 return CallToolResult::success([
                     new TextContent(sprintf(
@@ -65,7 +67,7 @@ final class GetAttachmentTool
             // For non-image files, return text info
             return CallToolResult::success([
                 new TextContent(sprintf(
-                    "Attachment: %s\nType: %s\nSize: %d bytes\n\nNote: This file type (%s) cannot be displayed directly. It can be downloaded from Redmine.",
+                    "Attachment: %s\nType: %s\nSize: %d bytes\n\nNote: This file type (%s) cannot be displayed directly. It can be downloaded from Monday.",
                     $filename,
                     $contentType,
                     $filesize,

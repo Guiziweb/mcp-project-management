@@ -14,7 +14,7 @@ use App\Mcp\Infrastructure\Provider\Jira\JiraClient;
 use App\Mcp\Infrastructure\Provider\Monday\MondayAdapter;
 use App\Mcp\Infrastructure\Provider\Monday\MondayClient;
 use App\Mcp\Infrastructure\Provider\Redmine\RedmineAdapter;
-use App\Mcp\Infrastructure\Provider\Redmine\RedmineClient;
+use App\Mcp\Infrastructure\Provider\Redmine\RedmineClientFactoryInterface;
 use App\Shared\Domain\UserCredential;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -33,6 +33,7 @@ final readonly class AdapterFactory
     public function __construct(
         private DenormalizerInterface $serializer,
         private LoggerInterface $logger,
+        private RedmineClientFactoryInterface $redmineClientFactory,
     ) {
     }
 
@@ -60,7 +61,7 @@ final readonly class AdapterFactory
             throw new \InvalidArgumentException('Redmine credentials require url and api_key');
         }
 
-        $redmineClient = new RedmineClient($url, $apiKey, $this->logger);
+        $redmineClient = $this->redmineClientFactory->create($url, $apiKey);
 
         return new RedmineAdapter($redmineClient, $this->serializer);
     }

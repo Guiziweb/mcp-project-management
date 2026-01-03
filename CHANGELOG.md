@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.1](https://github.com/Guiziweb/mcp-project-management/compare/v2.0.0...v2.0.1) (2026-01-03)
+
+
+### Bug Fixes
+
+* resolve PHPStan errors and code style issues ([1d02038](https://github.com/Guiziweb/mcp-project-management/commit/1d02038d17088ee12875f2408073e2c83a1bdb6c))
+
+
+### Documentation
+
+* update README to reflect current architecture ([70b9c96](https://github.com/Guiziweb/mcp-project-management/commit/70b9c96714a07fdc2514e22a6f85ef16f8696f51))
+
 ## [2.0.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.6.1...v2.0.0) (2026-01-03)
 
 

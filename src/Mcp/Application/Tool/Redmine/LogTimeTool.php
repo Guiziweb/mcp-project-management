@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Domain\Model\Activity;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
@@ -12,7 +13,7 @@ use Mcp\Exception\ToolCallException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class LogTimeTool
+final class LogTimeTool implements RedmineTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -24,17 +25,22 @@ final class LogTimeTool
      */
     #[McpTool(name: 'log_time')]
     public function logTime(
-        #[Schema(minimum: 1, description: 'The issue ID to log time against')]
-        int $issue_id,
+        #[Schema(description: 'The issue ID to log time against')]
+        mixed $issue_id,
         #[Schema(description: 'Number of hours to log (must be > 0)')]
-        float $hours,
+        mixed $hours,
         #[Schema(description: 'Comments for the time entry')]
         string $comment,
-        #[Schema(minimum: 1, description: 'Activity ID (required, read provider://projects/{project_id}/activities to get valid IDs)')]
-        int $activity_id,
+        #[Schema(description: 'Activity ID (required, read provider://projects/{project_id}/activities to get valid IDs)')]
+        mixed $activity_id,
         #[Schema(pattern: '^\d{4}-\d{2}-\d{2}$', description: 'Date in YYYY-MM-DD format. Defaults to today if not specified.')]
         ?string $spent_on = null,
     ): array {
+        // Cast to proper types for API compatibility (Cursor sends strings)
+        $issue_id = (int) $issue_id;
+        $hours = (float) $hours;
+        $activity_id = (int) $activity_id;
+
         $adapter = $this->adapterHolder->getRedmine();
 
         // Validate hours
@@ -60,11 +66,7 @@ final class LogTimeTool
                     $projectActivities
                 );
 
-                throw new ToolCallException(sprintf(
-                    'Activity ID %d is not allowed for this project. Allowed activities: %s',
-                    $activity_id,
-                    implode(', ', $allowedList)
-                ));
+                throw new ToolCallException(sprintf('Activity ID %d is not allowed for this project. Allowed activities: %s', $activity_id, implode(', ', $allowedList)));
             }
         }
 

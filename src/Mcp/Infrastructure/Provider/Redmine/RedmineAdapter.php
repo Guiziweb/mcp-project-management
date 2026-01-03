@@ -144,7 +144,7 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
             $statuses
         );
     }
-    
+
     public function logTime(
         int $issueId,
         int $seconds,

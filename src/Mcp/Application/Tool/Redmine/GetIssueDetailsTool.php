@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class GetIssueDetailsTool
+final class GetIssueDetailsTool implements RedmineTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -22,10 +23,10 @@ final class GetIssueDetailsTool
      */
     #[McpTool(name: 'get_issue_details')]
     public function getIssueDetails(
-        #[Schema(minimum: 1, description: 'The ID of the issue to retrieve')]
-        int $issue_id,
-    ): array
-    {
+        #[Schema(description: 'The ID of the issue to retrieve')]
+        mixed $issue_id,
+    ): array {
+        $issue_id = (int) $issue_id;
         $adapter = $this->adapterHolder->getRedmine();
         $issue = $adapter->getIssue($issue_id);
 

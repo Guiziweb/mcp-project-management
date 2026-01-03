@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Admin\Infrastructure\Service;
 
 use App\Admin\Infrastructure\Doctrine\Entity\User;
+use App\Mcp\Application\Tool\JiraTool;
+use App\Mcp\Application\Tool\MondayTool;
+use App\Mcp\Application\Tool\RedmineTool;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Server\Builder;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
@@ -85,7 +88,7 @@ class ToolRegistry
     private function discoverToolsFromClass(object $tool): void
     {
         $reflection = new \ReflectionClass($tool);
-        $provider = $this->extractProvider($reflection->getName());
+        $provider = $this->extractProvider($tool);
 
         foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             $attributes = $method->getAttributes(McpTool::class);
@@ -102,22 +105,16 @@ class ToolRegistry
     }
 
     /**
-     * Extract provider from class namespace.
-     * App\Mcp\Application\Tool\Redmine\ListIssuesTool -> redmine
+     * Extract provider from tool's marker interface.
      */
-    private function extractProvider(string $className): string
+    private function extractProvider(object $tool): string
     {
-        if (str_contains($className, '\\Redmine\\')) {
-            return 'redmine';
-        }
-        if (str_contains($className, '\\Jira\\')) {
-            return 'jira';
-        }
-        if (str_contains($className, '\\Monday\\')) {
-            return 'monday';
-        }
-
-        return 'unknown';
+        return match (true) {
+            $tool instanceof RedmineTool => 'redmine',
+            $tool instanceof JiraTool => 'jira',
+            $tool instanceof MondayTool => 'monday',
+            default => 'unknown',
+        };
     }
 
     private function humanizeName(string $name): string

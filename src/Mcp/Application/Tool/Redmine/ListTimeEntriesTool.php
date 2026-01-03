@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Domain\Model\TimeEntry;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
@@ -11,7 +12,7 @@ use Mcp\Capability\Attribute\Schema;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class ListTimeEntriesTool
+final class ListTimeEntriesTool implements RedmineTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -27,9 +28,12 @@ final class ListTimeEntriesTool
         ?string $from = null,
         #[Schema(pattern: '^\d{4}-\d{2}-\d{2}$', description: 'End date (YYYY-MM-DD)')]
         ?string $to = null,
-        #[Schema(minimum: 1, description: 'Redmine user ID to query (admin-only, null = current user)')]
-        ?int $user_id = null,
+        #[Schema(description: 'Redmine user ID to query (admin-only, null = current user)')]
+        mixed $user_id = null,
     ): array {
+        // Cast to int for API compatibility (Cursor sends strings)
+        $user_id = null !== $user_id && '' !== $user_id ? (int) $user_id : null;
+
         $adapter = $this->adapterHolder->getRedmine();
 
         // Parse dates

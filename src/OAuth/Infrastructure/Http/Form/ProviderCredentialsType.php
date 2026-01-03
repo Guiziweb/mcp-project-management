@@ -53,7 +53,6 @@ class ProviderCredentialsType extends AbstractType
                 'help' => $fieldConfig['help'] ?? null,
             ]);
         }
-
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final readonly class ListProjectsTool
+final readonly class ListProjectsTool implements RedmineTool
 {
     public function __construct(
         private AdapterHolder $adapterHolder,

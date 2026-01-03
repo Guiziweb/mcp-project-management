@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Jira;
 
+use App\Mcp\Application\Tool\JiraTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class LogTimeTool
+final class LogTimeTool implements JiraTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,

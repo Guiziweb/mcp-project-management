@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Domain\Model\Status;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
@@ -12,7 +13,7 @@ use Mcp\Exception\ToolCallException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class UpdateIssueTool
+final class UpdateIssueTool implements RedmineTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -24,25 +25,22 @@ final class UpdateIssueTool
      */
     #[McpTool(name: 'update_issue')]
     public function updateIssue(
-        #[Schema(minimum: 1, description: 'The issue ID to update')]
-        int $issue_id,
-        #[Schema(minimum: 1, description: 'New status ID (optional, use provider://statuses to get valid IDs)')]
+        #[Schema(description: 'The issue ID to update')]
+        mixed $issue_id,
+        #[Schema(description: 'New status ID (optional, use provider://statuses to get valid IDs)')]
         mixed $status_id = null,
-        #[Schema(minimum: 0, maximum: 100, description: 'Percentage of completion 0-100 (optional)')]
+        #[Schema(description: 'Percentage of completion 0-100 (optional)')]
         mixed $done_ratio = null,
-        #[Schema(minimum: 1, description: 'User ID to assign the issue to (optional, use provider://projects/{project_id}/members to get valid IDs)')]
+        #[Schema(description: 'User ID to assign the issue to (optional, use provider://projects/{project_id}/members to get valid IDs)')]
         mixed $assigned_to_id = null,
     ): array {
+        // Cast to int for API compatibility (Cursor sends strings)
+        $issue_id = (int) $issue_id;
+        $status_id = null !== $status_id && '' !== $status_id ? (int) $status_id : null;
+        $done_ratio = null !== $done_ratio && '' !== $done_ratio ? (int) $done_ratio : null;
+        $assigned_to_id = null !== $assigned_to_id && '' !== $assigned_to_id ? (int) $assigned_to_id : null;
+
         $adapter = $this->adapterHolder->getRedmine();
-
-        // Normalize status_id (some clients send strings)
-        $status_id = null !== $status_id ? (int) $status_id : null;
-
-        // Normalize done_ratio (some clients send strings)
-        $done_ratio = null !== $done_ratio ? (int) $done_ratio : null;
-
-        // Normalize assigned_to_id (some clients send strings)
-        $assigned_to_id = null !== $assigned_to_id ? (int) $assigned_to_id : null;
 
         // Validate status_id format
         if (null !== $status_id && $status_id <= 0) {
@@ -77,11 +75,7 @@ final class UpdateIssueTool
                     $issue->allowedStatuses
                 );
 
-                throw new ToolCallException(sprintf(
-                    'Status ID %d is not allowed for this issue. Allowed statuses: %s',
-                    $status_id,
-                    implode(', ', $allowedList)
-                ));
+                throw new ToolCallException(sprintf('Status ID %d is not allowed for this issue. Allowed statuses: %s', $status_id, implode(', ', $allowedList)));
             }
         }
 

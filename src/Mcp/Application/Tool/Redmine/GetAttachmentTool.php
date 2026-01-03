@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
@@ -13,7 +14,7 @@ use Mcp\Schema\Result\CallToolResult;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class GetAttachmentTool
+final class GetAttachmentTool implements RedmineTool
 {
     private const SUPPORTED_IMAGE_TYPES = [
         'image/png',
@@ -33,10 +34,10 @@ final class GetAttachmentTool
      */
     #[McpTool(name: 'get_attachment')]
     public function getAttachment(
-        #[Schema(minimum: 1, description: 'The ID of the attachment to download')]
-        int $attachment_id,
-    ): CallToolResult
-    {
+        #[Schema(description: 'The ID of the attachment to download')]
+        mixed $attachment_id,
+    ): CallToolResult {
+        $attachment_id = (int) $attachment_id;
         try {
             $adapter = $this->adapterHolder->getRedmine();
 

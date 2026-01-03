@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Monday;
 
+use App\Mcp\Application\Tool\MondayTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\Content\ImageContent;
@@ -12,7 +13,7 @@ use Mcp\Schema\Result\CallToolResult;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class GetAttachmentTool
+final class GetAttachmentTool implements MondayTool
 {
     private const SUPPORTED_IMAGE_TYPES = [
         'image/png',

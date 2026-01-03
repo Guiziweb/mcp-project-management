@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Monday;
 
+use App\Mcp\Application\Tool\MondayTool;
 use App\Mcp\Domain\Model\TimeEntry;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
@@ -11,7 +12,7 @@ use Mcp\Capability\Attribute\Schema;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class ListTimeEntriesTool
+final class ListTimeEntriesTool implements MondayTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,

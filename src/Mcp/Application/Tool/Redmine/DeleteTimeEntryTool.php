@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Mcp\Application\Tool\Redmine;
 
+use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-final class DeleteTimeEntryTool
+final class DeleteTimeEntryTool implements RedmineTool
 {
     public function __construct(
         private readonly AdapterHolder $adapterHolder,
@@ -22,9 +23,10 @@ final class DeleteTimeEntryTool
      */
     #[McpTool(name: 'delete_time_entry')]
     public function deleteTimeEntry(
-        #[Schema(minimum: 1, description: 'The time entry ID to delete')]
-        int $time_entry_id,
+        #[Schema(description: 'The time entry ID to delete')]
+        mixed $time_entry_id,
     ): array {
+        $time_entry_id = (int) $time_entry_id;
         $adapter = $this->adapterHolder->getRedmine();
         $adapter->deleteTimeEntry($time_entry_id);
 

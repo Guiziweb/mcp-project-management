@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.0](https://github.com/Guiziweb/mcp-project-management/compare/v1.6.1...v2.0.0) (2026-01-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* Tools are now organized under Tool/{Provider}/ directories
+
+### Bug Fixes
+
+* add trusted_proxies config for HTTPS behind reverse proxy ([a387164](https://github.com/Guiziweb/mcp-project-management/commit/a3871641b97b959e4f3dbf57048963a7d5baacda))
+* use mixed types for MCP tool parameters to fix Cursor validation ([2f6b3ed](https://github.com/Guiziweb/mcp-project-management/commit/2f6b3ed822e685109134f3bbbf82bbe2c4955a28))
+
+
+### Code Refactoring
+
+* reorganize tools by provider and improve permission system ([9b5cc31](https://github.com/Guiziweb/mcp-project-management/commit/9b5cc317b55f3a3a68315e6219c8f8e62c6bd079))
+
 ## [1.6.1](https://github.com/Guiziweb/mcp-project-management/compare/v1.6.0...v1.6.1) (2025-12-30)
 
 

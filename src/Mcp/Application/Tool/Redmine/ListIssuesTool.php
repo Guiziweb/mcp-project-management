@@ -20,6 +20,8 @@ final class ListIssuesTool implements RedmineTool
 
     /**
      * List issues assigned to a user from ONE specific project.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'list_issues')]
     public function listIssues(

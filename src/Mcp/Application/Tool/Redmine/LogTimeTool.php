@@ -22,6 +22,8 @@ final class LogTimeTool implements RedmineTool
 
     /**
      * Log time spent on an issue.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'log_time')]
     public function logTime(

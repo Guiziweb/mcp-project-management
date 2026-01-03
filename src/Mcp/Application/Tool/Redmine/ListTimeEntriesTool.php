@@ -21,6 +21,8 @@ final class ListTimeEntriesTool implements RedmineTool
 
     /**
      * Get time entries with optional date filtering and total calculation.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'list_time_entries')]
     public function listTimeEntries(

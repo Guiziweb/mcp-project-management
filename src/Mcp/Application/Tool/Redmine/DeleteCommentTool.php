@@ -20,6 +20,8 @@ final class DeleteCommentTool implements RedmineTool
 
     /**
      * Delete a comment from an issue.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'delete_comment')]
     public function deleteComment(

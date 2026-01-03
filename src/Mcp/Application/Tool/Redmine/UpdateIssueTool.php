@@ -22,6 +22,8 @@ final class UpdateIssueTool implements RedmineTool
 
     /**
      * Update an issue.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'update_issue')]
     public function updateIssue(

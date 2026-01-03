@@ -21,6 +21,8 @@ final class UpdateTimeEntryTool implements RedmineTool
 
     /**
      * Update an existing time entry.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'update_time_entry')]
     public function updateTimeEntry(

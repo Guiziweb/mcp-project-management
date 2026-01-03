@@ -20,6 +20,8 @@ final class AddCommentTool implements RedmineTool
 
     /**
      * Add a comment to an issue.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'add_comment')]
     public function addComment(

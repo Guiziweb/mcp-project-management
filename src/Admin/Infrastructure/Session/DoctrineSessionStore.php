@@ -23,7 +23,6 @@ use Symfony\Component\Uid\Uuid;
 class DoctrineSessionStore implements SessionStoreInterface
 {
     private ?User $currentUser = null;
-    private ?string $clientInfo = null;
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -40,14 +39,6 @@ class DoctrineSessionStore implements SessionStoreInterface
     public function setCurrentUser(User $user): void
     {
         $this->currentUser = $user;
-    }
-
-    /**
-     * Set client info (e.g., "Claude Desktop", "Cursor").
-     */
-    public function setClientInfo(?string $clientInfo): void
-    {
-        $this->clientInfo = $clientInfo;
     }
 
     public function exists(Uuid $id): bool

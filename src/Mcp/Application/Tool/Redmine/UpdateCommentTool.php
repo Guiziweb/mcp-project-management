@@ -20,6 +20,8 @@ final class UpdateCommentTool implements RedmineTool
 
     /**
      * Update an existing comment on an issue.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'update_comment')]
     public function updateComment(

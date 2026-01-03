@@ -9,6 +9,9 @@ namespace App\Mcp\Domain\Model;
  */
 readonly class ProjectMember
 {
+    /**
+     * @param array<string> $roles
+     */
     public function __construct(
         public int $id,
         public string $name,

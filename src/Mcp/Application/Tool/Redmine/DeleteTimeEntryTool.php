@@ -20,6 +20,8 @@ final class DeleteTimeEntryTool implements RedmineTool
 
     /**
      * Delete a time entry.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'delete_time_entry')]
     public function deleteTimeEntry(

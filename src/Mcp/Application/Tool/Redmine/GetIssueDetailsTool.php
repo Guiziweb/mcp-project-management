@@ -20,6 +20,8 @@ final class GetIssueDetailsTool implements RedmineTool
 
     /**
      * Get detailed information about a specific issue by its ID.
+     *
+     * @return array<string, mixed>
      */
     #[McpTool(name: 'get_issue_details')]
     public function getIssueDetails(

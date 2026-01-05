@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.1...v2.1.2) (2026-01-05)
+
+
+### Bug Fixes
+
+* update delete actions to use POST with CSRF tokens ([44d30c0](https://github.com/Guiziweb/mcp-project-management/commit/44d30c07264a3f1254d35e0ea19db32111c0cb4f))
+
 ## [2.1.1](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.0...v2.1.1) (2026-01-05)
 
 

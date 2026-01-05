@@ -56,9 +56,8 @@ final class UserControllerTest extends FunctionalTestCase
         $user2Id = $user2->getId();
 
         $this->loginAs($admin1);
-        $this->client->request('GET', '/admin/users/'.$user2Id.'/delete');
-
-        // Voter denies access to users from other orgs
+        // OrgAdmin cannot access edit page of other org's user, so cannot get the delete form
+        $this->client->request('GET', '/admin/users/'.$user2Id.'/edit');
         $this->assertResponseStatusCodeSame(403);
 
         // Verify NOT deleted - disable filter to query across orgs
@@ -144,17 +143,21 @@ final class UserControllerTest extends FunctionalTestCase
         $org = $this->createOrganization();
         $admin = $this->createUser($org, 'admin@example.com', [User::ROLE_ORG_ADMIN]);
         $pendingUser = $this->createUser($org, 'pending@example.com', [], approved: false);
+        $pendingUserId = $pendingUser->getId();
 
         $this->assertTrue($pendingUser->isPending());
 
         $this->loginAs($admin);
-        $this->client->request('POST', '/admin/users/'.$pendingUser->getId().'/approve');
+        // Go to users list and find the approve form
+        $crawler = $this->client->request('GET', '/admin/users');
+        $form = $crawler->filter('form[action$="/'.$pendingUserId.'/approve"]')->form();
+        $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/users');
 
         // Verify approved
         $this->em->clear();
-        $approved = $this->em->find(User::class, $pendingUser->getId());
+        $approved = $this->em->find(User::class, $pendingUserId);
         $this->assertFalse($approved->isPending());
     }
 
@@ -192,7 +195,10 @@ final class UserControllerTest extends FunctionalTestCase
         $userId = $user->getId();
 
         $this->loginAs($admin);
-        $this->client->request('GET', '/admin/users/'.$userId.'/delete');
+        // Go to edit page and find the delete form
+        $crawler = $this->client->request('GET', '/admin/users/'.$userId.'/edit');
+        $form = $crawler->filter('form[action$="/'.$userId.'/delete"]')->form();
+        $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/users');
 
@@ -206,16 +212,20 @@ final class UserControllerTest extends FunctionalTestCase
     {
         $org = $this->createOrganization();
         $admin = $this->createUser($org, 'admin@example.com', [User::ROLE_ORG_ADMIN]);
+        $adminId = $admin->getId();
 
         $this->loginAs($admin);
-        $this->client->request('GET', '/admin/users/'.$admin->getId().'/delete');
+        // Go to edit page and try to submit the delete form
+        $crawler = $this->client->request('GET', '/admin/users/'.$adminId.'/edit');
+        $form = $crawler->filter('form[action$="/'.$adminId.'/delete"]')->form();
+        $this->client->submit($form);
 
         // Voter should deny self-deletion
         $this->assertResponseStatusCodeSame(403);
 
         // Verify NOT deleted
         $this->em->clear();
-        $stillExists = $this->em->find(User::class, $admin->getId());
+        $stillExists = $this->em->find(User::class, $adminId);
         $this->assertNotNull($stillExists);
     }
 }

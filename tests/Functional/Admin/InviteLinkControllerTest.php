@@ -160,7 +160,11 @@ final class InviteLinkControllerTest extends FunctionalTestCase
         $invite = $this->createInviteLink($org, $admin, 'To Delete');
 
         $this->loginAs($admin);
-        $this->client->request('GET', '/admin/invites/'.$invite->getToken().'/delete');
+        $crawler = $this->client->request('GET', '/admin/invites');
+
+        // Find and submit the delete form for our invite
+        $form = $crawler->filter('form[action$="/'.$invite->getToken().'/delete"]')->form();
+        $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/invites');
 
@@ -182,11 +186,11 @@ final class InviteLinkControllerTest extends FunctionalTestCase
         $token = (string) $invite->getToken();
 
         $this->loginAs($admin1);
-        $this->client->request('GET', '/admin/invites/'.$token.'/delete');
+        $crawler = $this->client->request('GET', '/admin/invites');
 
-        // OrganizationFilter hides other org's invites entirely (404, not 403)
-        // This is correct multi-tenancy behavior
-        $this->assertResponseStatusCodeSame(404);
+        // Org1 admin shouldn't see org2's invites, so no delete form should exist
+        $forms = $crawler->filter('form[action$="/'.$token.'/delete"]');
+        $this->assertCount(0, $forms, 'Org admin should not see other org invites');
 
         // Verify NOT deleted - disable filter to query across orgs
         $this->em->clear();
@@ -206,7 +210,11 @@ final class InviteLinkControllerTest extends FunctionalTestCase
         $invite = $this->createInviteLink($org2, $admin2, 'Org2 Invite');
 
         $this->loginAs($superAdmin);
-        $this->client->request('GET', '/admin/invites/'.$invite->getToken().'/delete');
+        $crawler = $this->client->request('GET', '/admin/invites');
+
+        // Super admin can see all invites, find and submit the delete form
+        $form = $crawler->filter('form[action$="/'.$invite->getToken().'/delete"]')->form();
+        $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/invites');
 

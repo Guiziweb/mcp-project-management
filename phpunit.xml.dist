@@ -14,6 +14,10 @@
         <server name="APP_ENV" value="test" force="true"/>
         <server name="SHELL_VERBOSITY" value="-1"/>
         <server name="KERNEL_CLASS" value="App\Kernel"/>
+        <server name="ENCRYPTION_KEY" value="xOPv7EnUUMYr17edHznGejxoa4kZ5Qq34ztoRyMaDq8="/>
+        <server name="GOOGLE_CLIENT_ID" value="test-client-id"/>
+        <server name="GOOGLE_CLIENT_SECRET" value="test-client-secret"/>
+        <server name="APP_URL" value="http://localhost"/>
     </php>
 
     <testsuites>

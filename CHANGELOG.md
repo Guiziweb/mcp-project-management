@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.0.1...v2.1.0) (2026-01-05)
+
+
+### Features
+
+* add OAuth session manager, wiki support and UI improvements ([1d51063](https://github.com/Guiziweb/mcp-project-management/commit/1d5106314018ed6b7cf9efb92ae2a085ba139257))
+
 ## [2.0.1](https://github.com/Guiziweb/mcp-project-management/compare/v2.0.0...v2.0.1) (2026-01-03)
 
 

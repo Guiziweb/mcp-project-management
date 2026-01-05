@@ -10,6 +10,8 @@ use App\Admin\Infrastructure\Service\ToolRegistry;
 use App\Admin\Infrastructure\Session\DoctrineSessionStore;
 use App\Mcp\Application\Resource\ProjectActivitiesResource;
 use App\Mcp\Application\Resource\ProjectMembersResource;
+use App\Mcp\Application\Resource\ProjectWikiPageResource;
+use App\Mcp\Application\Resource\ProjectWikiPagesResource;
 use App\Mcp\Application\Resource\StatusesResource;
 use App\Mcp\Infrastructure\Adapter\AdapterFactory;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
@@ -148,8 +150,25 @@ final class McpController extends AbstractController
             $instructions[] = 'To assign an issue to someone, read "provider://projects/{project_id}/members" to get user IDs.';
         }
 
-        if (!empty($instructions)) {
-            $builder->setInstructions(implode("\n", $instructions));
-        }
+        $builder->addResourceTemplate(
+            [ProjectWikiPagesResource::class, 'getProjectWikiPages'],
+            uriTemplate: 'provider://projects/{project_id}/wiki',
+            name: 'project_wiki_pages',
+            description: 'List of wiki pages for a project.',
+            mimeType: 'application/json'
+        );
+
+        $builder->addResourceTemplate(
+            [ProjectWikiPageResource::class, 'getProjectWikiPage'],
+            uriTemplate: 'provider://projects/{project_id}/wiki/{page_title}',
+            name: 'project_wiki_page',
+            description: 'Content of a specific wiki page.',
+            mimeType: 'application/json'
+        );
+
+        $instructions[] = 'To list wiki pages for a project, read "provider://projects/{project_id}/wiki".';
+        $instructions[] = 'To get a specific wiki page content, read "provider://projects/{project_id}/wiki/{page_title}".';
+
+        $builder->setInstructions(implode("\n", $instructions));
     }
 }

@@ -100,10 +100,16 @@ final class UserController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/delete', name: 'admin_users_delete', methods: ['GET'])]
-    public function delete(User $user): Response
+    #[Route('/{id}/delete', name: 'admin_users_delete', methods: ['POST'])]
+    public function delete(User $user, Request $request): Response
     {
         $this->denyAccessUnlessGranted('DELETE', $user);
+
+        if (!$this->isCsrfTokenValid('delete-user-'.$user->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_users');
+        }
 
         $this->em->remove($user);
         $this->em->flush();
@@ -114,9 +120,15 @@ final class UserController extends AbstractController
     }
 
     #[Route('/{id}/approve', name: 'admin_users_approve', methods: ['POST'])]
-    public function approve(User $user): Response
+    public function approve(User $user, Request $request): Response
     {
         $this->denyAccessUnlessGranted('EDIT', $user);
+
+        if (!$this->isCsrfTokenValid('approve-user-'.$user->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_users');
+        }
 
         if ($user->isPending()) {
             $user->approve();

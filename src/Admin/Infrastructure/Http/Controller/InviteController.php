@@ -9,7 +9,7 @@ use App\Admin\Infrastructure\Doctrine\Repository\InviteLinkRepository;
 use App\Admin\Infrastructure\Doctrine\Repository\UserRepository;
 use App\OAuth\Infrastructure\Http\Form\ProviderCredentialsType;
 use App\Shared\Infrastructure\Security\EncryptionService;
-use App\Shared\Infrastructure\Security\GoogleAuthService;
+use App\Shared\Infrastructure\Security\OAuthSessionManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,7 +34,7 @@ final class InviteController extends AbstractController
         private readonly InviteLinkRepository $inviteLinkRepository,
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $em,
-        private readonly GoogleAuthService $googleAuth,
+        private readonly OAuthSessionManager $oauthSession,
         private readonly EncryptionService $encryptionService,
         private readonly ClockInterface $clock,
     ) {
@@ -42,10 +42,10 @@ final class InviteController extends AbstractController
 
     /**
      * Landing page for invite link.
-     * Redirects to Google OAuth.
+     * Redirects to OAuth provider.
      */
     #[Route('/join/{token}', name: 'invite_join', methods: ['GET'])]
-    public function join(string $token, Request $request): Response
+    public function join(string $token): Response
     {
         try {
             $uuid = Uuid::fromString($token);
@@ -63,78 +63,63 @@ final class InviteController extends AbstractController
             ]);
         }
 
-        // Store invite token in session and redirect to Google OAuth
-        $session = $request->getSession();
-        $session->set('invite_token', $token);
-
-        // Use invite-specific callback URL
+        // Store invite token and redirect to OAuth provider
+        $this->oauthSession->storeInviteToken($token);
         $callbackUrl = $this->generateUrl('invite_callback', [], UrlGeneratorInterface::ABSOLUTE_URL);
-        $googleAuth = $this->googleAuth->getAuthorizationUrl($callbackUrl);
-        $session->set('google_oauth_state', $googleAuth['state']);
+        $authUrl = $this->oauthSession->startAuth($callbackUrl);
 
-        return $this->redirect($googleAuth['url']);
+        return $this->redirect($authUrl);
     }
 
     /**
-     * Google OAuth callback for invite flow.
+     * OAuth callback for invite flow.
      * Creates user account after successful authentication.
      */
     #[Route('/join/callback', name: 'invite_callback', methods: ['GET', 'POST'], priority: 10)]
     public function callback(Request $request): Response
     {
-        $session = $request->getSession();
-        $inviteToken = $session->get('invite_token');
+        $inviteToken = $this->oauthSession->getInviteToken();
 
-        if (!$inviteToken) {
+        if (null === $inviteToken) {
             return $this->render('invite/invalid.html.twig', [
                 'error' => 'Session expired. Please use your invite link again.',
             ]);
         }
 
-        // Handle Google OAuth callback
+        // Handle OAuth callback
         if ($request->isMethod('GET') && $request->query->has('code')) {
-            $code = $request->query->get('code');
-            $state = $request->query->get('state');
-            $expectedState = $session->get('google_oauth_state');
+            $code = $request->query->getString('code');
+            $state = $request->query->getString('state');
 
-            if (!$code || !is_string($code)) {
+            if ('' === $code) {
                 return $this->render('invite/invalid.html.twig', [
-                    'error' => 'Google authentication failed.',
+                    'error' => 'Authentication failed.',
                 ]);
             }
 
             try {
-                // Use the same callback URL as in join()
                 $callbackUrl = $this->generateUrl('invite_callback', [], UrlGeneratorInterface::ABSOLUTE_URL);
-                $googleUser = $this->googleAuth->handleCallback($code, (string) $state, $expectedState, $callbackUrl);
-                $session->set('google_user_email', $googleUser['email']);
-                $session->set('google_user_id', $googleUser['id']);
-                $session->set('google_user_name', $googleUser['name']);
+                $authUser = $this->oauthSession->handleCallback($code, $state, $callbackUrl);
+                $this->oauthSession->storeInviteUser($authUser);
             } catch (\RuntimeException $e) {
                 return $this->render('invite/invalid.html.twig', [
-                    'error' => 'Google authentication failed: '.$e->getMessage(),
+                    'error' => 'Authentication failed: '.$e->getMessage(),
                 ]);
             }
         }
 
-        // Check if user already exists
-        $userEmail = $session->get('google_user_email');
-        $googleId = $session->get('google_user_id');
-
-        if (!$userEmail || !$googleId) {
+        // Get authenticated user
+        $authUser = $this->oauthSession->getInviteUser();
+        if (null === $authUser) {
             return $this->render('invite/invalid.html.twig', [
                 'error' => 'Session expired. Please use your invite link again.',
             ]);
         }
 
-        $existingUser = $this->userRepository->findByEmail($userEmail);
+        // Check if user already exists
+        $existingUser = $this->userRepository->findByEmail($authUser['email']);
         if ($existingUser) {
-            // User already exists, just redirect to success
-            $session->remove('invite_token');
-            $session->remove('google_oauth_state');
-            $session->remove('google_user_email');
-            $session->remove('google_user_id');
-            $session->remove('google_user_name');
+            $this->oauthSession->clearInviteFlow();
 
             return $this->render('invite/success.html.twig', [
                 'user' => $existingUser,
@@ -162,7 +147,8 @@ final class InviteController extends AbstractController
             $userCredentials = $form->getData();
 
             // Create user
-            $user = new User($userEmail, $googleId, $organization, $this->clock->now());
+            $user = new User($authUser['email'], $authUser['id'], $organization, $this->clock->now());
+            $user->setName($authUser['name']);
 
             // Encrypt and store credentials as JSON
             $encryptedCredentials = $this->encryptionService->encrypt(
@@ -177,12 +163,7 @@ final class InviteController extends AbstractController
             $this->em->persist($inviteLink);
             $this->em->flush();
 
-            // Clear session
-            $session->remove('invite_token');
-            $session->remove('google_oauth_state');
-            $session->remove('google_user_email');
-            $session->remove('google_user_id');
-            $session->remove('google_user_name');
+            $this->oauthSession->clearInviteFlow();
 
             return $this->render('invite/success.html.twig', [
                 'user' => $user,
@@ -193,8 +174,8 @@ final class InviteController extends AbstractController
         return $this->render('invite/credentials.html.twig', [
             'form' => $form,
             'organization' => $organization,
-            'google_user_name' => $session->get('google_user_name'),
-            'google_user_email' => $userEmail,
+            'auth_user_name' => $authUser['name'],
+            'auth_user_email' => $authUser['email'],
         ]);
     }
 }

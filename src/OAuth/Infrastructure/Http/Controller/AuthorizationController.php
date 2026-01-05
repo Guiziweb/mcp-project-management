@@ -9,22 +9,21 @@ use App\OAuth\Infrastructure\Http\Form\ProviderCredentialsType;
 use App\OAuth\Infrastructure\Security\OAuthAuthorizationCodeStore;
 use App\OAuth\Infrastructure\Security\RedirectUriValidator;
 use App\Shared\Infrastructure\Security\EncryptionService;
-use App\Shared\Infrastructure\Security\GoogleAuthService;
+use App\Shared\Infrastructure\Security\OAuthSessionManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * OAuth 2.0 Authorization endpoint.
- * Handles user authentication via Google and credential collection.
+ * Handles user authentication via social providers and credential collection.
  */
 final class AuthorizationController extends AbstractController
 {
     public function __construct(
-        private readonly GoogleAuthService $googleAuth,
+        private readonly OAuthSessionManager $oauthSession,
         private readonly UserRepository $userRepository,
         private readonly EncryptionService $encryptionService,
         private readonly OAuthAuthorizationCodeStore $codeStore,
@@ -34,7 +33,7 @@ final class AuthorizationController extends AbstractController
 
     /**
      * OAuth authorization endpoint.
-     * Redirects to Google for authentication.
+     * Redirects to social auth provider for authentication.
      */
     #[Route('/oauth/authorize', name: 'oauth_authorize', methods: ['GET'])]
     public function authorize(Request $request): Response
@@ -55,63 +54,51 @@ final class AuthorizationController extends AbstractController
             ], 400);
         }
 
-        $session = $request->getSession();
-        $session->set('oauth_client_id', $clientId);
-        $session->set('oauth_redirect_uri', $redirectUri);
-        $session->set('oauth_state', $state);
+        $this->oauthSession->storeMcpOAuthParams($clientId, $redirectUri, $state);
+        $authUrl = $this->oauthSession->startAuth();
 
-        $googleAuth = $this->googleAuth->getAuthorizationUrl();
-        $session->set('google_oauth_state', $googleAuth['state']);
-
-        return $this->redirect($googleAuth['url']);
+        return $this->redirect($authUrl);
     }
 
     /**
-     * Google OAuth callback endpoint.
-     * Receives the user from Google, then shows form to enter provider credentials.
-     * Also handles admin login flow when admin_login session flag is set.
+     * OAuth callback endpoint.
+     * Receives the user from provider, then shows form to enter provider credentials.
+     * Also handles admin login flow and signup flow based on session flags.
      */
-    #[Route('/oauth/google-callback', name: 'oauth_google_callback', methods: ['GET', 'POST'])]
-    public function googleCallback(Request $request): Response
+    #[Route('/oauth/callback', name: 'oauth_callback', methods: ['GET', 'POST'])]
+    public function oauthCallback(Request $request): Response
     {
-        $session = $request->getSession();
-
-        // Handle GET: Google redirects back with authorization code
+        // Handle GET: Provider redirects back with authorization code
         if ($request->isMethod('GET') && $request->query->has('code')) {
-            $code = $request->query->get('code');
-            $state = $request->query->get('state');
-            $expectedState = $session->get('google_oauth_state');
+            $code = $request->query->getString('code');
+            $state = $request->query->getString('state');
 
-            if (!$code) {
-                return new JsonResponse(['error' => 'access_denied', 'error_description' => 'User denied access or Google error'], 400);
-            }
-
-            if (!$expectedState) {
-                return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Session expired, please start authorization again'], 400);
+            if ('' === $code) {
+                return new JsonResponse(['error' => 'access_denied', 'error_description' => 'User denied access or provider error'], 400);
             }
 
             try {
-                $googleUser = $this->googleAuth->handleCallback($code, (string) $state, $expectedState);
+                $authUser = $this->oauthSession->handleCallback($code, $state);
 
                 // Dispatch to appropriate handler based on session flags
-                if ($session->get('signup_flow')) {
-                    return $this->handleSignupCallback($session, $googleUser);
+                if ($this->oauthSession->isSignupFlow()) {
+                    return $this->handleSignupCallback($authUser);
                 }
 
-                if ($session->get('admin_login')) {
-                    return $this->handleAdminLogin($session, $googleUser['email']);
+                if ($this->oauthSession->isAdminLogin()) {
+                    return $this->handleAdminLogin($authUser['email']);
                 }
 
                 // Default: MCP OAuth flow
-                return $this->handleMcpOAuthCallback($session, $googleUser);
+                return $this->handleMcpOAuthCallback($authUser);
             } catch (\RuntimeException $e) {
                 return new JsonResponse(['error' => 'server_error', 'error_description' => $e->getMessage()], 500);
             }
         }
 
         // Check session validity
-        $userEmail = $session->get('google_user_email');
-        if (!$userEmail) {
+        $userEmail = $this->oauthSession->getMcpUserEmail();
+        if (null === $userEmail) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Session expired, please start authorization again'], 400);
         }
 
@@ -142,7 +129,6 @@ final class AuthorizationController extends AbstractController
             );
 
             return $this->completeAuthorizationWithCredentials(
-                $session,
                 $providerType,
                 $providerConfig,
                 $decryptedCredentials,
@@ -167,7 +153,6 @@ final class AuthorizationController extends AbstractController
             $this->userRepository->save($dbUser);
 
             return $this->completeAuthorizationWithCredentials(
-                $session,
                 $providerType,
                 $providerConfig,
                 $userCredentials,
@@ -177,8 +162,8 @@ final class AuthorizationController extends AbstractController
 
         return $this->render('oauth/authorize.html.twig', [
             'form' => $form,
-            'google_user_name' => $session->get('google_user_name'),
-            'google_user_email' => $userEmail,
+            'auth_user_name' => $this->oauthSession->getMcpUserName(),
+            'auth_user_email' => $userEmail,
             'organization' => $organization,
         ]);
     }
@@ -190,17 +175,14 @@ final class AuthorizationController extends AbstractController
      * @param array<string, mixed> $userCredentials User-level credentials (api_key, email, etc.)
      */
     private function completeAuthorizationWithCredentials(
-        SessionInterface $session,
         string $providerType,
         array $orgConfig,
         array $userCredentials,
         int $userId,
     ): Response {
-        $clientId = $session->get('oauth_client_id');
-        $redirectUri = $session->get('oauth_redirect_uri');
-        $state = $session->get('oauth_state');
+        $oauthParams = $this->oauthSession->getMcpOAuthParams();
 
-        if (!\is_string($redirectUri) || '' === $redirectUri) {
+        if (null === $oauthParams) {
             return new JsonResponse(['error' => 'invalid_request', 'error_description' => 'Session expired, please start authorization again'], 400);
         }
 
@@ -208,96 +190,76 @@ final class AuthorizationController extends AbstractController
         $authCode = bin2hex(random_bytes(32));
         $authData = [
             'user_id' => $userId,
-            'client_id' => $clientId,
-            'redirect_uri' => $redirectUri,
+            'client_id' => $oauthParams['client_id'],
+            'redirect_uri' => $oauthParams['redirect_uri'],
             'provider' => $providerType,
             'org_config' => $orgConfig,
             'user_credentials' => $userCredentials,
         ];
 
         $this->codeStore->store($authCode, $authData);
-
-        // Clear session
-        $session->remove('oauth_client_id');
-        $session->remove('oauth_redirect_uri');
-        $session->remove('oauth_state');
-        $session->remove('google_oauth_state');
-        $session->remove('google_user_email');
-        $session->remove('google_user_name');
+        $this->oauthSession->clearMcpOAuthFlow();
 
         // Redirect back to client with authorization code
-        $redirectUrl = $redirectUri.'?code='.$authCode;
-        if ($state) {
-            $redirectUrl .= '&state='.urlencode($state);
+        $redirectUrl = $oauthParams['redirect_uri'].'?code='.$authCode;
+        if ('' !== $oauthParams['state']) {
+            $redirectUrl .= '&state='.urlencode($oauthParams['state']);
         }
 
         return $this->redirect($redirectUrl);
     }
 
     /**
-     * Handle signup flow callback after Google authentication.
+     * Handle signup flow callback after authentication.
      *
-     * @param array{email: string, name: string, id: string} $googleUser
+     * @param array{email: string, name: string, id: string} $authUser
      */
-    private function handleSignupCallback(SessionInterface $session, array $googleUser): Response
+    private function handleSignupCallback(array $authUser): Response
     {
-        $session->remove('signup_flow');
-        $session->remove('google_oauth_state');
-
-        if ($this->userRepository->findByEmail($googleUser['email'])) {
-            $this->addFlash('error', 'Un compte avec cet email existe déjà. Connectez-vous plutôt.');
+        if ($this->userRepository->findByEmail($authUser['email'])) {
+            $this->oauthSession->clearSignupFlow();
+            $this->addFlash('error', 'You already have an account. Log in to access your organization, or use a different email to create a new one.');
 
             return $this->redirectToRoute('admin_login');
         }
 
-        $session->set('signup_google_user', [
-            'email' => $googleUser['email'],
-            'name' => $googleUser['name'],
-            'id' => $googleUser['id'],
-        ]);
+        $this->oauthSession->storeSignupUser($authUser);
 
         return $this->redirectToRoute('admin_signup_wizard');
     }
 
     /**
-     * Handle MCP OAuth flow callback after Google authentication.
+     * Handle MCP OAuth flow callback after authentication.
      *
-     * @param array{email: string, name: string, id: string} $googleUser
+     * @param array{email: string, name: string, id: string} $authUser
      */
-    private function handleMcpOAuthCallback(SessionInterface $session, array $googleUser): Response
+    private function handleMcpOAuthCallback(array $authUser): Response
     {
-        // User will be checked in googleCallback (must exist in DB and be approved)
-        $session->set('google_user_email', $googleUser['email']);
-        $session->set('google_user_name', $googleUser['name']);
+        // User will be checked in oauthCallback (must exist in DB and be approved)
+        $this->oauthSession->storeMcpUser($authUser);
 
-        return $this->redirectToRoute('oauth_google_callback');
+        return $this->redirectToRoute('oauth_callback');
     }
 
     /**
-     * Handle admin login flow after Google authentication.
+     * Handle admin login flow after authentication.
      */
-    private function handleAdminLogin(SessionInterface $session, string $email): Response
+    private function handleAdminLogin(string $email): Response
     {
-        // Clean up admin login flag
-        $session->remove('admin_login');
-        $session->remove('google_oauth_state');
+        $this->oauthSession->clearAdminLogin();
 
         // Find user in DB
         $user = $this->userRepository->findByEmail($email);
 
-        if (null === $user) {
+        if (null === $user || (!$user->isOrgAdmin() && !$user->isSuperAdmin())) {
             return $this->render('admin/login_error.html.twig', [
-                'error' => 'User not found. Please contact your administrator.',
+                'error' => 'Unable to authenticate.',
             ]);
         }
 
-        if (!$user->isOrgAdmin() && !$user->isSuperAdmin()) {
-            return $this->render('admin/login_error.html.twig', [
-                'error' => 'You do not have admin access.',
-            ]);
-        }
-
-        // Store user in session for admin authentication
+        // Regenerate session ID to prevent session fixation attacks
+        $session = $this->oauthSession->getSession();
+        $session->migrate(true);
         $session->set('admin_user_id', $user->getId());
 
         return $this->redirectToRoute('admin_dashboard');

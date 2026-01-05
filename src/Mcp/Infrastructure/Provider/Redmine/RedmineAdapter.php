@@ -11,6 +11,7 @@ use App\Mcp\Domain\Model\ProjectMember;
 use App\Mcp\Domain\Model\ProviderUser;
 use App\Mcp\Domain\Model\Status;
 use App\Mcp\Domain\Model\TimeEntry;
+use App\Mcp\Domain\Model\WikiPage;
 use App\Mcp\Domain\Port\ActivityPort;
 use App\Mcp\Domain\Port\AttachmentReadPort;
 use App\Mcp\Domain\Port\IssueReadPort;
@@ -21,6 +22,7 @@ use App\Mcp\Domain\Port\StatusPort;
 use App\Mcp\Domain\Port\TimeEntryReadPort;
 use App\Mcp\Domain\Port\TimeEntryWritePort;
 use App\Mcp\Domain\Port\UserPort;
+use App\Mcp\Domain\Port\WikiPort;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
@@ -30,7 +32,7 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
  * Created dynamically by AdapterFactory with user credentials.
  */
 #[Autoconfigure(autowire: false)]
-class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort, ProjectMemberPort
+class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWritePort, TimeEntryReadPort, TimeEntryWritePort, ActivityPort, StatusPort, AttachmentReadPort, ProjectMemberPort, WikiPort
 {
     private ?ProviderUser $currentUser = null;
 
@@ -298,5 +300,36 @@ class RedmineAdapter implements UserPort, ProjectPort, IssueReadPort, IssueWrite
         }
 
         return $members;
+    }
+
+    public function getWikiPages(int $projectId): array
+    {
+        $data = $this->redmineClient->getWikiPages($projectId);
+        $pages = $data['wiki_pages'] ?? [];
+
+        return array_map(
+            fn (array $page) => new WikiPage(
+                title: (string) $page['title'],
+                version: isset($page['version']) ? (string) $page['version'] : null,
+                createdOn: isset($page['created_on']) ? new \DateTime($page['created_on']) : null,
+                updatedOn: isset($page['updated_on']) ? new \DateTime($page['updated_on']) : null,
+            ),
+            $pages
+        );
+    }
+
+    public function getWikiPage(int $projectId, string $pageTitle): WikiPage
+    {
+        $data = $this->redmineClient->getWikiPage($projectId, $pageTitle);
+        $page = $data['wiki_page'] ?? $data;
+
+        return new WikiPage(
+            title: (string) $page['title'],
+            text: isset($page['text']) ? (string) $page['text'] : null,
+            version: isset($page['version']) ? (string) $page['version'] : null,
+            author: isset($page['author']['name']) ? (string) $page['author']['name'] : null,
+            createdOn: isset($page['created_on']) ? new \DateTime($page['created_on']) : null,
+            updatedOn: isset($page['updated_on']) ? new \DateTime($page['updated_on']) : null,
+        );
     }
 }

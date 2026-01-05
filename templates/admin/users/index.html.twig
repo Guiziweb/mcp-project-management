@@ -101,6 +101,7 @@
                         <div class="flex items-center justify-end gap-2">
                             {% if user.pending %}
                             <form method="post" action="{{ path('admin_users_approve', {id: user.id}) }}" class="inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('approve-user-' ~ user.id) }}">
                                 <button type="submit"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

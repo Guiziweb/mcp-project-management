@@ -65,15 +65,15 @@
                 </div>
 
                 <!-- User -->
-                {% if google_user_email is defined and google_user_email %}
+                {% if auth_user_email is defined and auth_user_email %}
                 <div class="mb-8 pb-8 border-b border-neutral-800">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-neutral-800 rounded-full flex items-center justify-center text-sm font-medium">
-                            {{ google_user_email|first|upper }}
+                            {{ auth_user_email|first|upper }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium truncate">{{ google_user_name|default('User') }}</p>
-                            <p class="text-sm text-neutral-500 truncate">{{ google_user_email }}</p>
+                            <p class="text-sm font-medium truncate">{{ auth_user_name|default('User') }}</p>
+                            <p class="text-sm text-neutral-500 truncate">{{ auth_user_email }}</p>
                         </div>
                     </div>
                 </div>

@@ -26,7 +26,7 @@ services:
         arguments:
             $googleClientId: '%env(GOOGLE_CLIENT_ID)%'
             $googleClientSecret: '%env(GOOGLE_CLIENT_SECRET)%'
-            $redirectUri: '%env(APP_URL)%/oauth/google-callback'
+            $redirectUri: '%env(APP_URL)%/oauth/callback'
 
     # Encryption service for sensitive data
     App\Shared\Infrastructure\Security\EncryptionService:

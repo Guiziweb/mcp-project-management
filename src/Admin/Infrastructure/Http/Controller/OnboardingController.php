@@ -9,7 +9,7 @@ use App\Admin\Infrastructure\Doctrine\Entity\User;
 use App\Admin\Infrastructure\Doctrine\Repository\UserRepository;
 use App\Admin\Infrastructure\Dto\OrganizationSignUp;
 use App\Admin\Infrastructure\Http\Form\Signup\OrganizationSignUpFlowType;
-use App\Shared\Infrastructure\Security\GoogleAuthService;
+use App\Shared\Infrastructure\Security\OAuthSessionManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,10 +31,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class OnboardingController extends AbstractController
 {
     private const SESSION_KEY = 'signup_flow_data';
-    private const GOOGLE_USER_KEY = 'signup_google_user';
 
     public function __construct(
-        private readonly GoogleAuthService $googleAuth,
+        private readonly OAuthSessionManager $oauthSession,
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly RequestStack $requestStack,
@@ -43,38 +42,35 @@ final class OnboardingController extends AbstractController
     }
 
     /**
-     * Entry point: redirect to Google OAuth.
+     * Entry point: redirect to social auth provider.
      */
     #[Route('/admin/signup', name: 'admin_signup', methods: ['GET'])]
-    public function signup(Request $request): Response
+    public function signup(): Response
     {
-        $session = $request->getSession();
-
-        // If already authenticated with Google, go to wizard
-        if ($session->has(self::GOOGLE_USER_KEY)) {
+        // If already authenticated, go to wizard
+        if (null !== $this->oauthSession->getSignupUser()) {
             return $this->redirectToRoute('admin_signup_wizard');
         }
 
-        // Redirect to Google OAuth (uses default callback /oauth/google-callback)
-        $googleAuth = $this->googleAuth->getAuthorizationUrl();
-        $session->set('google_oauth_state', $googleAuth['state']);
-        $session->set('signup_flow', true);
+        // Redirect to OAuth provider (uses default callback /oauth/callback)
+        $this->oauthSession->markAsSignupFlow();
+        $authUrl = $this->oauthSession->startAuth();
 
-        return $this->redirect($googleAuth['url']);
+        return $this->redirect($authUrl);
     }
 
     /**
      * Wizard: organization + provider steps.
-     * Called after Google OAuth callback redirects here with user info in session.
+     * Called after OAuth callback redirects here with user info in session.
      */
     #[Route('/admin/signup/wizard', name: 'admin_signup_wizard', methods: ['GET', 'POST'])]
     public function wizard(Request $request): Response
     {
         $session = $request->getSession();
 
-        // Must be authenticated with Google first
-        $googleUser = $session->get(self::GOOGLE_USER_KEY);
-        if (!$googleUser) {
+        // Must be authenticated first
+        $authUser = $this->oauthSession->getSignupUser();
+        if (null === $authUser) {
             return $this->redirectToRoute('admin_signup');
         }
 
@@ -89,9 +85,8 @@ final class OnboardingController extends AbstractController
         // If finished, create org and user
         if ($flow->isSubmitted() && $flow->isValid() && $flow->isFinished()) {
             \assert($flow->getData() instanceof OrganizationSignUp);
-            \assert(\is_array($googleUser) && isset($googleUser['email'], $googleUser['id'], $googleUser['name']));
 
-            return $this->createOrganization($flow->getData(), $googleUser, $session);
+            return $this->createOrganization($flow->getData(), $authUser, $session);
         }
 
         return $this->render('admin/signup/flow.html.twig', [
@@ -102,14 +97,15 @@ final class OnboardingController extends AbstractController
     /**
      * Create organization and user, then redirect to dashboard.
      *
-     * @param array{email: string, id: string, name: string} $googleUser
+     * @param array{email: string, id: string, name: string} $authUser
      */
-    private function createOrganization(OrganizationSignUp $data, array $googleUser, SessionInterface $session): Response
+    private function createOrganization(OrganizationSignUp $data, array $authUser, SessionInterface $session): Response
     {
-        // If user already exists, log them in (they authenticated via Google)
-        $existingUser = $this->userRepository->findByEmail($googleUser['email']);
+        // If user already exists, log them in (they authenticated via OAuth)
+        $existingUser = $this->userRepository->findByEmail($authUser['email']);
         if ($existingUser) {
             $this->cleanupSession();
+            $session->migrate(true);
             $session->set('admin_user_id', $existingUser->getId());
             $this->addFlash('info', 'Vous aviez déjà un compte, vous êtes maintenant connecté.');
 
@@ -127,14 +123,15 @@ final class OnboardingController extends AbstractController
         $this->entityManager->persist($organization);
 
         // Create admin user (auto-approved since they're creating their own org)
-        $user = new User($googleUser['email'], $googleUser['id'], $organization, $now);
-        $user->setName($googleUser['name']);
+        $user = new User($authUser['email'], $authUser['id'], $organization, $now);
+        $user->setName($authUser['name']);
         $user->setRoles([User::ROLE_ORG_ADMIN]);
         $user->approve();
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         $this->cleanupSession();
+        $session->migrate(true);
         $session->set('admin_user_id', $user->getId());
         $this->addFlash('success', 'Organisation créée avec succès !');
 
@@ -143,10 +140,8 @@ final class OnboardingController extends AbstractController
 
     private function cleanupSession(): void
     {
-        $session = $this->requestStack->getSession();
         $dataStorage = new SessionDataStorage(self::SESSION_KEY, $this->requestStack);
         $dataStorage->clear();
-        $session->remove(self::GOOGLE_USER_KEY);
-        $session->remove('signup_flow');
+        $this->oauthSession->clearSignupFlow();
     }
 }

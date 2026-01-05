@@ -20,8 +20,13 @@ use League\OAuth2\Client\Provider\GoogleUser;
  * Handles Google OAuth2 authentication flow.
  * Wraps the league/oauth2-google library for easier integration.
  */
-final class GoogleAuthService
+final class GoogleAuthService implements SocialAuthProviderInterface
 {
+    public function getKey(): string
+    {
+        return 'google';
+    }
+
     public function __construct(
         private readonly string $googleClientId,
         private readonly string $googleClientSecret,

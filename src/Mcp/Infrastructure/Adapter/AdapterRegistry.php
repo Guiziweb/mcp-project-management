@@ -46,7 +46,7 @@ final class AdapterRegistry
     /**
      * Get provider cards data for the signup UI.
      *
-     * @return array<string, array{key: string, label: string, description: string, urlPlaceholder: string, requiresUrl: bool}>
+     * @return array<string, array{key: string, label: string, description: string, urlPlaceholder: string, requiresUrl: bool, icon: string}>
      */
     public function getProviderCards(): array
     {
@@ -59,6 +59,7 @@ final class AdapterRegistry
                 'description' => $class::getDescription(),
                 'urlPlaceholder' => $urlPlaceholder,
                 'requiresUrl' => '' !== $urlPlaceholder,
+                'icon' => $class::getIconPath(),
             ];
         }
 
@@ -91,15 +92,5 @@ final class AdapterRegistry
         }
 
         return $this->adapters[$key]::getUserFields();
-    }
-
-    /**
-     * Get the metadata class for a specific adapter.
-     *
-     * @return class-string<PortMetadataInterface>|null
-     */
-    public function getAdapterClass(string $key): ?string
-    {
-        return $this->adapters[$key] ?? null;
     }
 }

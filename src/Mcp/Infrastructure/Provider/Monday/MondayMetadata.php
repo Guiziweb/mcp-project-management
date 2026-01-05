@@ -48,4 +48,9 @@ final class MondayMetadata implements PortMetadataInterface
             ],
         ];
     }
+
+    public static function getIconPath(): string
+    {
+        return '/images/providers/monday.svg';
+    }
 }

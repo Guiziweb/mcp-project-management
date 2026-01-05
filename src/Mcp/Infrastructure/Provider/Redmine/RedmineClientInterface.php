@@ -81,4 +81,18 @@ interface RedmineClientInterface
      * @return array<string, mixed>
      */
     public function getProjectActivities(int $projectId): array;
+
+    /**
+     * Get all wiki pages for a project.
+     *
+     * @return array<string, mixed>
+     */
+    public function getWikiPages(int $projectId): array;
+
+    /**
+     * Get a specific wiki page by title.
+     *
+     * @return array<string, mixed>
+     */
+    public function getWikiPage(int $projectId, string $pageTitle): array;
 }

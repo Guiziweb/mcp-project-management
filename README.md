@@ -64,6 +64,8 @@ src/
 | `provider://statuses` | Issue statuses | `update_issue`, `list_issues` |
 | `provider://projects/{id}/activities` | Activity types | `log_time` |
 | `provider://projects/{id}/members` | Project members | `update_issue` (assignment) |
+| `provider://projects/{id}/wiki` | Wiki pages list | - |
+| `provider://projects/{id}/wiki/{title}` | Wiki page content | - |
 
 ## Multi-tenancy
 

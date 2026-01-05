@@ -224,6 +224,36 @@ final class McpControllerTest extends FunctionalTestCase
             ],
         ]);
 
+        // Mock getWikiPages
+        $mockClient->method('getWikiPages')->willReturn([
+            'wiki_pages' => [
+                [
+                    'title' => 'Wiki',
+                    'version' => '1',
+                    'created_on' => '2025-01-01T10:00:00Z',
+                    'updated_on' => '2025-01-02T15:30:00Z',
+                ],
+                [
+                    'title' => 'Getting_Started',
+                    'version' => '3',
+                    'created_on' => '2025-01-01T10:00:00Z',
+                    'updated_on' => '2025-01-03T09:00:00Z',
+                ],
+            ],
+        ]);
+
+        // Mock getWikiPage
+        $mockClient->method('getWikiPage')->willReturn([
+            'wiki_page' => [
+                'title' => 'Wiki',
+                'text' => '# Welcome\n\nThis is the wiki home page.',
+                'version' => '1',
+                'author' => ['name' => 'Test User'],
+                'created_on' => '2025-01-01T10:00:00Z',
+                'updated_on' => '2025-01-02T15:30:00Z',
+            ],
+        ]);
+
         // Configure the mock factory (static to persist across kernel reboots)
         MockRedmineClientFactory::setMockClient($mockClient);
     }
@@ -829,6 +859,109 @@ final class McpControllerTest extends FunctionalTestCase
         $this->assertArrayHasKey('id', $data[0]);
         $this->assertArrayHasKey('name', $data[0]);
         $this->assertArrayHasKey('roles', $data[0]);
+    }
+
+    public function testMcpReadResourceProjectWikiPages(): void
+    {
+        $this->mcpRequest('initialize', [
+            'protocolVersion' => '2024-11-05',
+            'capabilities' => [],
+            'clientInfo' => ['name' => 'test', 'version' => '1.0'],
+        ]);
+
+        $response = $this->mcpRequest('resources/read', [
+            'uri' => 'provider://projects/1/wiki',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('contents', $response['result']);
+        $this->assertNotEmpty($response['result']['contents']);
+
+        $content = $response['result']['contents'][0];
+        $this->assertEquals('provider://projects/1/wiki', $content['uri']);
+        $this->assertEquals('application/json', $content['mimeType']);
+
+        $data = json_decode($content['text'], true);
+        $this->assertIsArray($data);
+        $this->assertNotEmpty($data);
+        $this->assertCount(2, $data);
+        $this->assertArrayHasKey('title', $data[0]);
+        $this->assertEquals('Wiki', $data[0]['title']);
+        $this->assertEquals('Getting_Started', $data[1]['title']);
+    }
+
+    public function testMcpReadResourceProjectWikiPage(): void
+    {
+        $this->mcpRequest('initialize', [
+            'protocolVersion' => '2024-11-05',
+            'capabilities' => [],
+            'clientInfo' => ['name' => 'test', 'version' => '1.0'],
+        ]);
+
+        $response = $this->mcpRequest('resources/read', [
+            'uri' => 'provider://projects/1/wiki/Wiki',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('contents', $response['result']);
+        $this->assertNotEmpty($response['result']['contents']);
+
+        $content = $response['result']['contents'][0];
+        $this->assertEquals('provider://projects/1/wiki/Wiki', $content['uri']);
+        $this->assertEquals('application/json', $content['mimeType']);
+
+        $data = json_decode($content['text'], true);
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('title', $data);
+        $this->assertArrayHasKey('text', $data);
+        $this->assertArrayHasKey('author', $data);
+        $this->assertEquals('Wiki', $data['title']);
+        $this->assertStringContainsString('Welcome', $data['text']);
+        $this->assertEquals('Test User', $data['author']);
+    }
+
+    public function testMcpReadResourceProjectWikiPageLargeContent(): void
+    {
+        // Create mock with large wiki page (280KB+)
+        $mockClient = $this->createMockRedmineClient();
+        $this->configureBaseMocks($mockClient);
+
+        $largeText = str_repeat('Lorem ipsum dolor sit amet, consectetur adipiscing elit. ', 5000);
+
+        $mockClient->method('getWikiPage')->willReturn([
+            'wiki_page' => [
+                'title' => 'BigPage',
+                'text' => $largeText,
+                'version' => '1',
+                'author' => ['name' => 'Test User'],
+                'created_on' => '2025-01-01T10:00:00Z',
+                'updated_on' => '2025-01-02T15:30:00Z',
+            ],
+        ]);
+
+        MockRedmineClientFactory::setMockClient($mockClient);
+
+        $this->mcpRequest('initialize', [
+            'protocolVersion' => '2024-11-05',
+            'capabilities' => [],
+            'clientInfo' => ['name' => 'test', 'version' => '1.0'],
+        ]);
+
+        $response = $this->mcpRequest('resources/read', [
+            'uri' => 'provider://projects/1/wiki/BigPage',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('contents', $response['result']);
+
+        $content = $response['result']['contents'][0];
+        $data = json_decode($content['text'], true);
+
+        $this->assertEquals('BigPage', $data['title']);
+        $this->assertGreaterThan(200000, \strlen($data['text']), 'Content should be > 200KB');
     }
 
     // ========================================

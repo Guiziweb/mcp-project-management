@@ -387,4 +387,35 @@ class RedmineClient implements RedmineClientInterface
 
         return $api->show($projectId, ['include' => ['time_entry_activities']]);
     }
+
+    /**
+     * Get all wiki pages for a project.
+     *
+     * @param int $projectId Project ID
+     *
+     * @return array<string, mixed>
+     */
+    public function getWikiPages(int $projectId): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('wiki');
+
+        return $api->listByProject($projectId);
+    }
+
+    /**
+     * Get a specific wiki page by title.
+     *
+     * @param int    $projectId Project ID
+     * @param string $pageTitle Wiki page title
+     *
+     * @return array<string, mixed>
+     */
+    public function getWikiPage(int $projectId, string $pageTitle): array
+    {
+        $client = $this->getClient();
+        $api = $client->getApi('wiki');
+
+        return $api->show($projectId, $pageTitle);
+    }
 }

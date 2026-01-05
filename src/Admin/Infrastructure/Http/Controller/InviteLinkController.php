@@ -97,10 +97,18 @@ final class InviteLinkController extends AbstractController
         ]);
     }
 
-    #[Route('/{token}/delete', name: 'admin_invites_delete', methods: ['GET'])]
-    public function delete(#[MapEntity(mapping: ['token' => 'token'])] InviteLink $invite): Response
-    {
+    #[Route('/{token}/delete', name: 'admin_invites_delete', methods: ['POST'])]
+    public function delete(
+        #[MapEntity(mapping: ['token' => 'token'])] InviteLink $invite,
+        Request $request,
+    ): Response {
         $this->denyAccessUnlessGranted('DELETE', $invite);
+
+        if (!$this->isCsrfTokenValid('delete-invite-'.$invite->getToken(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_invites');
+        }
 
         $this->em->remove($invite);
         $this->em->flush();

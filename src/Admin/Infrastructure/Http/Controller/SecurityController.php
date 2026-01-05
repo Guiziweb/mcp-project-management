@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Admin\Infrastructure\Http\Controller;
 
-use App\Shared\Infrastructure\Security\GoogleAuthService;
+use App\Shared\Infrastructure\Security\OAuthSessionManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class SecurityController extends AbstractController
 {
     public function __construct(
-        private readonly GoogleAuthService $googleAuth,
+        private readonly OAuthSessionManager $oauthSession,
     ) {
     }
 
@@ -24,17 +23,12 @@ final class SecurityController extends AbstractController
     }
 
     #[Route('/admin/login/redirect', name: 'admin_login_redirect', methods: ['GET'])]
-    public function loginRedirect(Request $request): Response
+    public function loginRedirect(): Response
     {
-        // Set flag to indicate this is an admin login flow
-        $session = $request->getSession();
-        $session->set('admin_login', true);
+        $this->oauthSession->markAsAdminLogin();
+        $authUrl = $this->oauthSession->startAuth();
 
-        // Get Google OAuth URL and redirect
-        $googleAuth = $this->googleAuth->getAuthorizationUrl();
-        $session->set('google_oauth_state', $googleAuth['state']);
-
-        return $this->redirect($googleAuth['url']);
+        return $this->redirect($authUrl);
     }
 
     #[Route('/admin/logout', name: 'admin_logout', methods: ['GET'])]

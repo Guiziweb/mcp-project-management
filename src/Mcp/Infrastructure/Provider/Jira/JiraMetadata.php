@@ -60,4 +60,9 @@ final class JiraMetadata implements PortMetadataInterface
             ],
         ];
     }
+
+    public static function getIconPath(): string
+    {
+        return '/images/providers/jira.svg';
+    }
 }

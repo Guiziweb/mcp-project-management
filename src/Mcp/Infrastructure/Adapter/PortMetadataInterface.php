@@ -58,4 +58,11 @@ interface PortMetadataInterface
      * @return array<string, array{type: string, label: string, placeholder: string, help?: string, required?: bool}>
      */
     public static function getUserFields(): array;
+
+    /**
+     * Get the path to the provider's icon/logo.
+     *
+     * @return string Path relative to public/ (e.g., '/images/providers/redmine.svg')
+     */
+    public static function getIconPath(): string;
 }

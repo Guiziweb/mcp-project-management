@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.0...v2.1.1) (2026-01-05)
+
+
+### Bug Fixes
+
+* code style in OAuthSessionManagerTest ([8477393](https://github.com/Guiziweb/mcp-project-management/commit/84773932b8aefd7da91368a24bb818e87cd5869c))
+
 ## [2.1.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.0.1...v2.1.0) (2026-01-05)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.3](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.2...v2.1.3) (2026-01-09)
+
+
+### Code Refactoring
+
+* remove Jira and Monday providers, keep Redmine only ([2fd7e49](https://github.com/Guiziweb/mcp-project-management/commit/2fd7e49d956f6a4772ea3325c98791606ae49ae8))
+
 ## [2.1.2](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.1...v2.1.2) (2026-01-05)
 
 

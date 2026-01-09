@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.4](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.3...v2.1.4) (2026-01-09)
+
+
+### Bug Fixes
+
+* add valid test encryption key to .env.example for CI ([44e2d57](https://github.com/Guiziweb/mcp-project-management/commit/44e2d5784d6c6056dbe7f54f9f3d9d16305442d9))
+
 ## [2.1.3](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.2...v2.1.3) (2026-01-09)
 
 

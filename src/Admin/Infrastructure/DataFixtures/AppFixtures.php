@@ -20,8 +20,6 @@ class AppFixtures extends Fixture
         private readonly string $orgName,
         #[Autowire(env: 'FIXTURE_ORG_SLUG')]
         private readonly string $orgSlug,
-        #[Autowire(env: 'FIXTURE_PROVIDER_TYPE')]
-        private readonly string $providerType,
         #[Autowire(env: 'FIXTURE_PROVIDER_URL')]
         private readonly string $providerUrl,
         #[Autowire(env: 'FIXTURE_ADMIN_EMAIL')]
@@ -33,7 +31,7 @@ class AppFixtures extends Fixture
     {
         $now = $this->clock->now();
 
-        $org = new Organization($this->orgName, $this->orgSlug, $this->providerType, $now);
+        $org = new Organization($this->orgName, $this->orgSlug, $now);
         $org->setProviderUrl($this->providerUrl);
         $manager->persist($org);
 

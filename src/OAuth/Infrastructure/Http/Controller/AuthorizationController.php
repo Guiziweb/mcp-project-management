@@ -118,7 +118,6 @@ final class AuthorizationController extends AbstractController
         }
 
         $organization = $dbUser->getOrganization();
-        $providerType = $organization->getProviderType();
         $providerConfig = $organization->getProviderConfig();
 
         // If user already has credentials, auto-authorize
@@ -129,17 +128,14 @@ final class AuthorizationController extends AbstractController
             );
 
             return $this->completeAuthorizationWithCredentials(
-                $providerType,
                 $providerConfig,
                 $decryptedCredentials,
                 $dbUser->getId()
             );
         }
 
-        // User needs to enter their credentials - show form with only user fields
-        $form = $this->createForm(ProviderCredentialsType::class, null, [
-            'provider_type' => $providerType,
-        ]);
+        // User needs to enter their Redmine API key
+        $form = $this->createForm(ProviderCredentialsType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -153,7 +149,6 @@ final class AuthorizationController extends AbstractController
             $this->userRepository->save($dbUser);
 
             return $this->completeAuthorizationWithCredentials(
-                $providerType,
                 $providerConfig,
                 $userCredentials,
                 $dbUser->getId()
@@ -171,11 +166,10 @@ final class AuthorizationController extends AbstractController
     /**
      * Complete OAuth authorization with org config + user credentials.
      *
-     * @param array<string, mixed> $orgConfig       Organization-level config (url, etc.)
-     * @param array<string, mixed> $userCredentials User-level credentials (api_key, email, etc.)
+     * @param array<string, mixed> $orgConfig       Organization-level config (url)
+     * @param array<string, mixed> $userCredentials User-level credentials (api_key)
      */
     private function completeAuthorizationWithCredentials(
-        string $providerType,
         array $orgConfig,
         array $userCredentials,
         int $userId,
@@ -192,7 +186,7 @@ final class AuthorizationController extends AbstractController
             'user_id' => $userId,
             'client_id' => $oauthParams['client_id'],
             'redirect_uri' => $oauthParams['redirect_uri'],
-            'provider' => $providerType,
+            'provider' => 'redmine',
             'org_config' => $orgConfig,
             'user_credentials' => $userCredentials,
         ];

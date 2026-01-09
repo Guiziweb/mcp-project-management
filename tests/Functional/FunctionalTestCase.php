@@ -52,9 +52,9 @@ abstract class FunctionalTestCase extends WebTestCase
     /**
      * Create an organization for testing.
      */
-    protected function createOrganization(string $name = 'Test Org', string $providerType = 'redmine'): Organization
+    protected function createOrganization(string $name = 'Test Org'): Organization
     {
-        $org = new Organization($name, null, $providerType, $this->now);
+        $org = new Organization($name, null, $this->now);
         $this->em->persist($org);
         $this->em->flush();
 

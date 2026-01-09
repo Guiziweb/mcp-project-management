@@ -112,7 +112,7 @@ final class OrganizationVoterTest extends TestCase
 
     private function createOrganization(int $id, string $name): Organization
     {
-        $org = new Organization($name, null, 'redmine', $this->now);
+        $org = new Organization($name, null, $this->now);
 
         $reflection = new \ReflectionProperty(Organization::class, 'id');
         $reflection->setValue($org, $id);

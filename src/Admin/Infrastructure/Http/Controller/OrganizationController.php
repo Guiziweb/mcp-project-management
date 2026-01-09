@@ -44,15 +44,10 @@ final class OrganizationController extends AbstractController
         $form = $this->createFormBuilder($org)
             ->add('name', TextType::class)
             ->add('slug', TextType::class)
-            ->add('providerType', ChoiceType::class, [
-                'choices' => [
-                    'Redmine' => 'redmine',
-                    'Jira' => 'jira',
-                    'Monday' => 'monday',
-                ],
-            ])
             ->add('providerUrl', UrlType::class, [
+                'label' => 'Redmine URL',
                 'required' => false,
+                'default_protocol' => null,
             ])
             ->add('enabledTools', ChoiceType::class, [
                 'choices' => $this->toolRegistry->getToolChoices(),

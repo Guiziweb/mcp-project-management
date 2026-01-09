@@ -16,7 +16,7 @@ final class AccessTokenTest extends TestCase
     protected function setUp(): void
     {
         $now = new \DateTimeImmutable('2024-01-01 00:00:00');
-        $organization = new Organization('Test Org', 'test-org', 'redmine', $now);
+        $organization = new Organization('Test Org', 'test-org', $now);
         $this->user = new User('test@example.com', 'google123', $organization, $now);
     }
 

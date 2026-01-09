@@ -18,21 +18,21 @@ final class OrganizationTest extends TestCase
 
     public function testSlugIsGeneratedFromName(): void
     {
-        $org = new Organization('My Company', null, 'redmine', $this->now);
+        $org = new Organization('My Company', null, $this->now);
 
         $this->assertSame('my-company', $org->getSlug());
     }
 
     public function testSlugWithSpecialCharacters(): void
     {
-        $org = new Organization('Acme & Co. (France)', null, 'redmine', $this->now);
+        $org = new Organization('Acme & Co. (France)', null, $this->now);
 
         $this->assertSame('acme-co-france', $org->getSlug());
     }
 
     public function testSlugWithAccents(): void
     {
-        $org = new Organization('Société Générale', null, 'redmine', $this->now);
+        $org = new Organization('Société Générale', null, $this->now);
 
         // Accented chars are removed, leaving short slug
         $this->assertStringContainsString('g-n-rale', $org->getSlug());
@@ -40,21 +40,21 @@ final class OrganizationTest extends TestCase
 
     public function testShortNameGetsOrgSuffix(): void
     {
-        $org = new Organization('AB', null, 'redmine', $this->now);
+        $org = new Organization('AB', null, $this->now);
 
         $this->assertSame('ab-org', $org->getSlug());
     }
 
     public function testCustomSlugIsUsed(): void
     {
-        $org = new Organization('My Company', 'custom-slug', 'redmine', $this->now);
+        $org = new Organization('My Company', 'custom-slug', $this->now);
 
         $this->assertSame('custom-slug', $org->getSlug());
     }
 
     public function testSetSlugWithValidValue(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $org->setSlug('new-valid-slug');
 
@@ -63,7 +63,7 @@ final class OrganizationTest extends TestCase
 
     public function testSetSlugTooShortThrowsException(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('between 3 and 50 characters');
@@ -73,7 +73,7 @@ final class OrganizationTest extends TestCase
 
     public function testSetSlugWithInvalidCharactersThrowsException(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('lowercase alphanumeric');
@@ -83,7 +83,7 @@ final class OrganizationTest extends TestCase
 
     public function testProviderUrl(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $this->assertNull($org->getProviderUrl());
 
@@ -95,7 +95,7 @@ final class OrganizationTest extends TestCase
 
     public function testProviderUrlNullRemovesFromConfig(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
         $org->setProviderUrl('https://example.com');
 
         $org->setProviderUrl(null);
@@ -106,7 +106,7 @@ final class OrganizationTest extends TestCase
 
     public function testProviderConfigValues(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $org->setProviderConfigValue('workspace', 'my-workspace');
         $org->setProviderConfigValue('api_version', 'v2');
@@ -118,7 +118,7 @@ final class OrganizationTest extends TestCase
 
     public function testEnabledToolsEmptyMeansAllAllowed(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $this->assertTrue($org->hasToolEnabled('any_tool'));
         $this->assertTrue($org->hasToolEnabled('another_tool'));
@@ -126,7 +126,7 @@ final class OrganizationTest extends TestCase
 
     public function testEnabledToolsRestrictsAccess(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $org->setEnabledTools(['list_issues', 'log_time']);
 
@@ -137,14 +137,14 @@ final class OrganizationTest extends TestCase
 
     public function testCreatedAtIsSet(): void
     {
-        $org = new Organization('Test', null, 'redmine', $this->now);
+        $org = new Organization('Test', null, $this->now);
 
         $this->assertSame($this->now, $org->getCreatedAt());
     }
 
     public function testToString(): void
     {
-        $org = new Organization('My Company', null, 'redmine', $this->now);
+        $org = new Organization('My Company', null, $this->now);
 
         $this->assertSame('My Company', (string) $org);
     }

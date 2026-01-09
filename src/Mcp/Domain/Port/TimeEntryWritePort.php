@@ -8,9 +8,6 @@ use App\Mcp\Domain\Model\TimeEntry;
 
 /**
  * Write operations for time entries.
- *
- * Implemented by providers that support logging/modifying time entries.
- * Monday.com does NOT implement this (read-only time tracking).
  */
 interface TimeEntryWritePort
 {

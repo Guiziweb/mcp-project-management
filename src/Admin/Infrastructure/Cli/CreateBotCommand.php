@@ -40,8 +40,7 @@ class CreateBotCommand extends Command
         $this
             ->addOption('organization', 'o', InputOption::VALUE_REQUIRED, 'Organization slug')
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Bot user email (e.g., bot@company.com)')
-            ->addOption('api-key', null, InputOption::VALUE_REQUIRED, 'Provider API key/token')
-            ->addOption('provider-email', null, InputOption::VALUE_OPTIONAL, 'Provider email (required for Jira)')
+            ->addOption('api-key', null, InputOption::VALUE_REQUIRED, 'Redmine API key')
         ;
     }
 
@@ -52,7 +51,6 @@ class CreateBotCommand extends Command
         $orgSlug = $input->getOption('organization');
         $email = $input->getOption('email');
         $apiKey = $input->getOption('api-key');
-        $providerEmail = $input->getOption('provider-email');
 
         if (!$orgSlug || !$email || !$apiKey) {
             $io->error('Required options: --organization, --email, --api-key');
@@ -63,14 +61,6 @@ class CreateBotCommand extends Command
         $organization = $this->organizationRepository->findBySlug($orgSlug);
         if (null === $organization) {
             $io->error(sprintf('Organization "%s" not found', $orgSlug));
-
-            return Command::FAILURE;
-        }
-
-        $provider = $organization->getProviderType();
-
-        if (UserCredential::PROVIDER_JIRA === $provider && !$providerEmail) {
-            $io->error('Jira provider requires --provider-email option');
 
             return Command::FAILURE;
         }
@@ -89,21 +79,12 @@ class CreateBotCommand extends Command
         }
 
         // Build credentials
-        $orgConfig = [];
         $providerUrl = $organization->getProviderUrl();
-        if ($providerUrl) {
-            $orgConfig['url'] = $providerUrl;
-        }
-
-        $userCredentials = ['api_key' => $apiKey];
-        if ($providerEmail) {
-            $userCredentials['email'] = $providerEmail;
-        }
 
         $credentials = [
-            'provider' => $provider,
-            'org_config' => $orgConfig,
-            'user_credentials' => $userCredentials,
+            'provider' => UserCredential::PROVIDER_REDMINE,
+            'org_config' => $providerUrl ? ['url' => $providerUrl] : [],
+            'user_credentials' => ['api_key' => $apiKey],
         ];
 
         $token = $this->tokenService->createAccessToken($user, $credentials);
@@ -114,7 +95,6 @@ class CreateBotCommand extends Command
         $io->table(['Property', 'Value'], [
             ['Email', $email],
             ['Organization', $organization->getName()],
-            ['Provider', $provider],
             ['URL', $providerUrl ?? 'N/A'],
         ]);
 

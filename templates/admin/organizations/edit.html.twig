@@ -36,17 +36,9 @@
                 <p class="mt-2 text-sm text-neutral-500">URL-friendly identifier (lowercase, no spaces)</p>
             </div>
 
-            <!-- Provider Type -->
+            <!-- Redmine URL -->
             <div>
-                <label class="block text-sm font-medium text-neutral-300 mb-2">Provider Type</label>
-                {{ form_widget(form.providerType, {'attr': {
-                    'class': 'w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors'
-                }}) }}
-            </div>
-
-            <!-- Provider URL -->
-            <div>
-                <label class="block text-sm font-medium text-neutral-300 mb-2">Provider URL</label>
+                <label class="block text-sm font-medium text-neutral-300 mb-2">Redmine URL</label>
                 {{ form_widget(form.providerUrl, {'attr': {
                     'class': 'w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors',
                     'placeholder': 'https://redmine.company.com'

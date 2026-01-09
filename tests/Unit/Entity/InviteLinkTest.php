@@ -18,7 +18,7 @@ final class InviteLinkTest extends TestCase
     protected function setUp(): void
     {
         $this->now = new \DateTimeImmutable('2024-01-15 10:00:00');
-        $this->organization = new Organization('Test Org', 'test-org', 'redmine', $this->now);
+        $this->organization = new Organization('Test Org', 'test-org', $this->now);
         $this->admin = new User('admin@example.com', 'google123', $this->organization, $this->now);
     }
 

@@ -39,11 +39,8 @@
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                            {% if org.providerType == 'redmine' %}bg-red-500/10 text-red-400 border border-red-500/20
-                            {% elseif org.providerType == 'jira' %}bg-blue-500/10 text-blue-400 border border-blue-500/20
-                            {% else %}bg-purple-500/10 text-purple-400 border border-purple-500/20{% endif %}">
-                            {{ org.providerType|capitalize }}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                            Redmine
                         </span>
                         {% if org.providerUrl %}
                             <p class="text-xs text-neutral-500 mt-1 truncate max-w-[200px]">{{ org.providerUrl }}</p>

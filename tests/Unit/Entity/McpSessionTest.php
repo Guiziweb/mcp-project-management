@@ -19,7 +19,7 @@ final class McpSessionTest extends TestCase
     protected function setUp(): void
     {
         $this->now = new \DateTimeImmutable('2024-01-15 10:00:00');
-        $this->organization = new Organization('Test Org', 'test-org', 'redmine', $this->now);
+        $this->organization = new Organization('Test Org', 'test-org', $this->now);
         $this->user = new User('user@example.com', 'google123', $this->organization, $this->now);
     }
 
@@ -120,7 +120,7 @@ final class McpSessionTest extends TestCase
 
     public function testOrganizationIsInheritedFromUser(): void
     {
-        $otherOrg = new Organization('Other Org', 'other-org', 'jira', $this->now);
+        $otherOrg = new Organization('Other Org', 'other-org', $this->now);
         $otherUser = new User('other@example.com', 'google456', $otherOrg, $this->now);
 
         $session = new McpSession(Uuid::v4(), $otherUser, '{}', $this->now);

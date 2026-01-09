@@ -21,7 +21,7 @@ final class McpControllerTest extends FunctionalTestCase
         parent::setUp();
 
         // Create organization and user
-        $org = new Organization('Test Org', 'test-org', 'redmine', $this->now);
+        $org = new Organization('Test Org', 'test-org', $this->now);
         $this->em->persist($org);
 
         $this->user = new User('test@example.com', 'google_123', $org, $this->now);

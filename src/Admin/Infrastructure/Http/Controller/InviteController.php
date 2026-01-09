@@ -137,10 +137,8 @@ final class InviteController extends AbstractController
 
         $organization = $inviteLink->getOrganization();
 
-        // Show form to enter credentials
-        $form = $this->createForm(ProviderCredentialsType::class, null, [
-            'provider_type' => $organization->getProviderType(),
-        ]);
+        // Show form to enter Redmine API key
+        $form = $this->createForm(ProviderCredentialsType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

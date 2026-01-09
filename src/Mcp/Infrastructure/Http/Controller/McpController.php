@@ -30,9 +30,7 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * HTTP MCP endpoint with OAuth authentication.
  *
- * Tools are registered dynamically via ToolRegistry based on:
- * - Provider type (Redmine, Jira, Monday)
- * - User permissions (enabledTools)
+ * Tools are registered dynamically via ToolRegistry based on user permissions.
  */
 final class McpController extends AbstractController
 {
@@ -55,8 +53,6 @@ final class McpController extends AbstractController
             throw new \LogicException('User should be authenticated by Symfony Security');
         }
 
-        $provider = $mcpUser->getCredential()->provider;
-
         // Load database user for permissions and session
         $dbUser = $this->userRepository->find((int) $mcpUser->getUserIdentifier());
         if (null === $dbUser) {
@@ -65,7 +61,6 @@ final class McpController extends AbstractController
 
         $this->logger->debug('Building MCP server for user', [
             'user_id' => $mcpUser->getUserIdentifier(),
-            'provider' => $provider,
         ]);
 
         // Convert Symfony Request to PSR-7
@@ -87,13 +82,11 @@ final class McpController extends AbstractController
             ->setLogger($this->logger)
             ->setSession($this->doctrineSessionStore);
 
-        // Register tools based on provider and user permissions
-        $this->toolRegistry->registerTools($builder, $dbUser, $provider);
+        // Register tools based on user permissions
+        $this->toolRegistry->registerTools($builder, $dbUser);
 
-        // Register resources based on tool dependencies (Redmine only)
-        if ('redmine' === $provider) {
-            $this->registerRedmineResources($builder, $dbUser);
-        }
+        // Register Redmine resources
+        $this->registerRedmineResources($builder, $dbUser);
 
         $server = $builder->build();
 

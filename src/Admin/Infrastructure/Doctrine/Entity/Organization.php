@@ -24,9 +24,6 @@ class Organization
     #[ORM\Column(length: 255, unique: true)]
     private string $slug;
 
-    #[ORM\Column(length: 50)]
-    private string $providerType;
-
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $size = null;
 
@@ -62,12 +59,10 @@ class Organization
     public function __construct(
         string $name,
         ?string $slug,
-        string $providerType,
         \DateTimeImmutable $createdAt,
     ) {
         $this->name = $name;
         $this->slug = $slug ?? self::generateSlugFromName($name);
-        $this->providerType = $providerType;
         $this->createdAt = $createdAt;
         $this->users = new ArrayCollection();
         $this->inviteLinks = new ArrayCollection();
@@ -127,18 +122,6 @@ class Organization
         }
 
         $this->slug = $slug;
-
-        return $this;
-    }
-
-    public function getProviderType(): string
-    {
-        return $this->providerType;
-    }
-
-    public function setProviderType(string $providerType): self
-    {
-        $this->providerType = $providerType;
 
         return $this;
     }

@@ -16,7 +16,7 @@ final class UserTest extends TestCase
     protected function setUp(): void
     {
         $this->now = new \DateTimeImmutable('2024-01-01 00:00:00');
-        $this->organization = new Organization('Test Org', 'test-org', 'redmine', $this->now);
+        $this->organization = new Organization('Test Org', 'test-org', $this->now);
     }
 
     public function testNewUserIsPendingByDefault(): void

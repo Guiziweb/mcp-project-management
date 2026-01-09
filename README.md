@@ -1,6 +1,6 @@
-# MCP Project Management
+# MCP Redmine
 
-Multi-provider MCP server connecting AI assistants (Claude, Cursor) to Redmine, Jira and Monday.
+MCP server connecting AI assistants (Claude, Cursor) to Redmine.
 
 ## Stack
 
@@ -15,17 +15,14 @@ Multi-provider MCP server connecting AI assistants (Claude, Cursor) to Redmine, 
 src/
 ├── Mcp/                    # MCP Core
 │   ├── Application/
-│   │   ├── Tool/           # Tools by provider
-│   │   │   ├── Redmine/    # 12 tools
-│   │   │   ├── Jira/       # 6 tools
-│   │   │   └── Monday/     # 5 tools
+│   │   ├── Tool/Redmine/   # 12 tools
 │   │   └── Resource/       # MCP Resources
 │   ├── Domain/
 │   │   ├── Model/          # Issue, Project, TimeEntry, etc.
 │   │   └── Port/           # Hexagonal interfaces
 │   └── Infrastructure/
 │       ├── Adapter/        # AdapterFactory, AdapterHolder
-│       └── Provider/       # Redmine/, Jira/, Monday/
+│       └── Provider/Redmine/
 │
 ├── OAuth/                  # OAuth 2.0 Server
 │   └── Infrastructure/
@@ -42,22 +39,22 @@ src/
 
 ## MCP Tools
 
-| Tool | Description | Redmine | Jira | Monday |
-|------|-------------|:-------:|:----:|:------:|
-| `list_projects` | List projects | x | x | x |
-| `list_issues` | Assigned issues | x | x | x |
-| `get_issue_details` | Details + comments + attachments | x | x | x |
-| `update_issue` | Update status/assignee/% | x | | |
-| `get_attachment` | Download attachment | x | x | x |
-| `list_time_entries` | Time entries | x | x | x |
-| `log_time` | Log time | x | x | |
-| `update_time_entry` | Update time entry | x | | |
-| `delete_time_entry` | Delete time entry | x | | |
-| `add_comment` | Add comment | x | | |
-| `update_comment` | Update comment | x | | |
-| `delete_comment` | Delete comment | x | | |
+| Tool | Description |
+|------|-------------|
+| `list_projects` | List projects |
+| `list_issues` | Assigned issues |
+| `get_issue_details` | Details + comments + attachments |
+| `update_issue` | Update status/assignee/% |
+| `get_attachment` | Download attachment |
+| `list_time_entries` | Time entries |
+| `log_time` | Log time |
+| `update_time_entry` | Update time entry |
+| `delete_time_entry` | Delete time entry |
+| `add_comment` | Add comment |
+| `update_comment` | Update comment |
+| `delete_comment` | Delete comment |
 
-## MCP Resources (Redmine only)
+## MCP Resources
 
 | Resource | Description | Used by |
 |----------|-------------|---------|
@@ -71,7 +68,7 @@ src/
 
 ### Entities
 
-- **Organization**: provider type, config, enabledTools
+- **Organization**: Redmine URL, enabledTools
 - **User**: email, roles, providerCredentials (encrypted), enabledTools
 - **McpSession**: MCP session with TTL (1h default)
 - **AccessToken**: OAuth tokens (hashed)
@@ -104,7 +101,7 @@ $user->hasToolEnabled('log_time')
 
 1. MCP Client → `/oauth/authorize`
 2. → Google Sign-In
-3. → Provider selection + credentials
+3. → Redmine API key
 4. → `/oauth/token` → access_token + refresh_token
 5. MCP Client → `/mcp` with Bearer token
 
@@ -169,7 +166,7 @@ $project_id = (int) $project_id;
 
 ### ToolRegistry
 
-Auto-discovery via marker interfaces (`RedmineTool`, `JiraTool`, `MondayTool`).
+Auto-discovery via marker interface (`RedmineTool`).
 
 ### Encryption
 

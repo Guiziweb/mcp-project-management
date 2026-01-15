@@ -100,6 +100,15 @@
             "tests/bootstrap.php"
         ]
     },
+    "sentry/sentry-symfony": {
+        "version": "5.8",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "5.0",
+            "ref": "b01478ecd8dc691c7b11e88dc39c1de1148d1b51"
+        }
+    },
     "symfony/asset-mapper": {
         "version": "7.3",
         "recipe": {

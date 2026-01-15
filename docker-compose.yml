@@ -24,6 +24,7 @@ services:
       FIXTURE_PROVIDER_TYPE: ${FIXTURE_PROVIDER_TYPE:-}
       FIXTURE_PROVIDER_URL: ${FIXTURE_PROVIDER_URL:-}
       FIXTURE_ADMIN_EMAIL: ${FIXTURE_ADMIN_EMAIL:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     restart: unless-stopped
 
 volumes:

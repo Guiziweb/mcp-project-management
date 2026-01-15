@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.4...v2.2.0) (2026-01-15)
+
+
+### Features
+
+* add Sentry error monitoring integration ([1b02670](https://github.com/Guiziweb/mcp-project-management/commit/1b026701a904abcc82f0d088424af6b4fe616e5b))
+
 ## [2.1.4](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.3...v2.1.4) (2026-01-09)
 
 

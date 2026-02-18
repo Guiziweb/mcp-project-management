@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.2.0...v2.3.0) (2026-02-18)
+
+
+### Features
+
+* structured error handling, target version, admin API key and Docker optimization ([770e3ee](https://github.com/Guiziweb/mcp-project-management/commit/770e3ee32a2ca2bbaad522dc21218c348bf71199))
+
 ## [2.2.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.1.4...v2.2.0) (2026-01-15)
 
 

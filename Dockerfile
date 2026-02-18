@@ -40,14 +40,15 @@ RUN if [ "$APP_ENV" = "dev" ]; then \
 # Copy application files
 COPY . .
 
+# Create required directories before post-install (cache:clear needs DB path)
+RUN mkdir -p var/cache var/log var/db /var/log/supervisor /run/nginx
+
 # Run post-install scripts now that app files are present
 RUN APP_ENV=$APP_ENV composer run-script post-install-cmd --no-interaction
 
 # Copy nginx and supervisor configurations
 COPY docker/nginx/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
-# Create required directories
-RUN mkdir -p var/cache var/log var/db /var/log/supervisor /run/nginx
 
 RUN php bin/console cache:clear --env=prod && \
     php bin/console cache:warmup --env=prod

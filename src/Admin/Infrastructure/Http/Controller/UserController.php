@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Admin\Infrastructure\Http\Controller;
 
 use App\Admin\Infrastructure\Doctrine\Entity\User;
+use App\Admin\Infrastructure\Doctrine\Repository\AccessTokenRepository;
 use App\Admin\Infrastructure\Doctrine\Repository\UserRepository;
 use App\Admin\Infrastructure\Service\ToolRegistry;
+use App\Shared\Infrastructure\Security\EncryptionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,6 +28,8 @@ final class UserController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly ToolRegistry $toolRegistry,
         private readonly PaginatorInterface $paginator,
+        private readonly EncryptionService $encryptionService,
+        private readonly AccessTokenRepository $accessTokenRepository,
     ) {
     }
 
@@ -82,11 +87,27 @@ final class UserController extends AbstractController
                 'expanded' => true,
                 'required' => false,
             ])
+            ->add('apiKey', TextType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => 'Redmine API Key',
+                'attr' => ['placeholder' => 'Leave empty to keep current'],
+                'help' => 'Changing the API key will revoke all active sessions.',
+            ])
             ->getForm();
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $apiKey = $form->get('apiKey')->getData();
+            if ($apiKey) {
+                $encrypted = $this->encryptionService->encrypt(
+                    json_encode(['api_key' => $apiKey], JSON_THROW_ON_ERROR)
+                );
+                $user->setProviderCredentials($encrypted);
+                $this->accessTokenRepository->revokeAllForUser($user);
+            }
+
             $this->em->flush();
 
             $this->addFlash('success', 'User updated successfully.');

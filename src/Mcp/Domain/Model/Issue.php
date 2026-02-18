@@ -23,6 +23,7 @@ readonly class Issue
         public ?string $assignee = null,
         public ?string $type = null,
         public ?string $priority = null,
+        public ?string $targetVersion = null,
         public array $comments = [],
         public array $attachments = [],
         public array $allowedStatuses = [],

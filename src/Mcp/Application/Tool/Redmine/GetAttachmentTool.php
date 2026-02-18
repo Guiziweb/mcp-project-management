@@ -6,8 +6,10 @@ namespace App\Mcp\Application\Tool\Redmine;
 
 use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ToolCallException;
 use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
@@ -74,6 +76,8 @@ final class GetAttachmentTool implements RedmineTool
                     $contentType
                 )),
             ]);
+        } catch (RedmineApiException $e) {
+            throw new ToolCallException($e->getMessage());
         } catch (\Throwable $e) {
             return CallToolResult::error([
                 new TextContent('Error downloading attachment: '.$e->getMessage()),

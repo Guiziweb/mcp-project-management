@@ -9,12 +9,12 @@ services:
     ports:
       - "8090:8080"
     volumes:
-      - app-data:/app/var
+      - db-data:/app/var/db
     environment:
       APP_ENV: ${APP_ENV:-prod}
       APP_SECRET: ${APP_SECRET}
       APP_URL: ${APP_URL}
-      DATABASE_URL: ${DATABASE_URL:-sqlite:///%kernel.project_dir%/var/data.db}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///%kernel.project_dir%/var/db/data.db}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
@@ -28,4 +28,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  app-data:
+  db-data:

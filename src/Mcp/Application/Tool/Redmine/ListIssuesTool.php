@@ -6,8 +6,10 @@ namespace App\Mcp\Application\Tool\Redmine;
 
 use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ToolCallException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
@@ -34,32 +36,36 @@ final class ListIssuesTool implements RedmineTool
         #[Schema(description: 'Filter by status ID (read provider://statuses for available IDs)')]
         mixed $status_id = null,
     ): array {
-        // Cast to int for API compatibility (Cursor sends strings)
-        $project_id = null !== $project_id && '' !== $project_id ? (int) $project_id : null;
-        $user_id = null !== $user_id && '' !== $user_id ? (int) $user_id : null;
-        $status_id = null !== $status_id && '' !== $status_id ? (int) $status_id : null;
+        try {
+            // Cast to int for API compatibility (Cursor sends strings)
+            $project_id = null !== $project_id && '' !== $project_id ? (int) $project_id : null;
+            $user_id = null !== $user_id && '' !== $user_id ? (int) $user_id : null;
+            $status_id = null !== $status_id && '' !== $status_id ? (int) $status_id : null;
 
-        $adapter = $this->adapterHolder->getRedmine();
-        $issues = $adapter->getIssues($project_id, $limit, $user_id, $status_id);
+            $adapter = $this->adapterHolder->getRedmine();
+            $issues = $adapter->getIssues($project_id, $limit, $user_id, $status_id);
 
-        return [
-            'success' => true,
-            'issues' => array_map(
-                fn ($issue) => [
-                    'id' => $issue->id,
-                    'title' => $issue->title,
-                    'description' => $issue->description,
-                    'status' => $issue->status,
-                    'project' => [
-                        'id' => $issue->project->id,
-                        'name' => $issue->project->name,
+            return [
+                'success' => true,
+                'issues' => array_map(
+                    fn ($issue) => [
+                        'id' => $issue->id,
+                        'title' => $issue->title,
+                        'description' => $issue->description,
+                        'status' => $issue->status,
+                        'project' => [
+                            'id' => $issue->project->id,
+                            'name' => $issue->project->name,
+                        ],
+                        'assignee' => $issue->assignee,
+                        'type' => $issue->type,
+                        'priority' => $issue->priority,
                     ],
-                    'assignee' => $issue->assignee,
-                    'type' => $issue->type,
-                    'priority' => $issue->priority,
-                ],
-                $issues
-            ),
-        ];
+                    $issues
+                ),
+            ];
+        } catch (RedmineApiException $e) {
+            throw new ToolCallException($e->getMessage());
+        }
     }
 }

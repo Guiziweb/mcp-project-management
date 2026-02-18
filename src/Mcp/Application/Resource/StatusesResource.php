@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Mcp\Application\Resource;
 
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
+use Mcp\Exception\ResourceReadException;
 use Mcp\Schema\Content\TextResourceContents;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -21,24 +23,28 @@ final class StatusesResource
      */
     public function getStatuses(): TextResourceContents
     {
-        $adapter = $this->adapterHolder->getRedmine();
-        $statuses = $adapter->getStatuses();
+        try {
+            $adapter = $this->adapterHolder->getRedmine();
+            $statuses = $adapter->getStatuses();
 
-        $data = array_map(
-            fn ($status) => [
-                'id' => $status->id,
-                'name' => $status->name,
-                'is_closed' => $status->isClosed,
-            ],
-            $statuses
-        );
+            $data = array_map(
+                fn ($status) => [
+                    'id' => $status->id,
+                    'name' => $status->name,
+                    'is_closed' => $status->isClosed,
+                ],
+                $statuses
+            );
 
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-        return new TextResourceContents(
-            uri: 'provider://statuses',
-            mimeType: 'application/json',
-            text: $json
-        );
+            return new TextResourceContents(
+                uri: 'provider://statuses',
+                mimeType: 'application/json',
+                text: $json
+            );
+        } catch (RedmineApiException $e) {
+            throw new ResourceReadException($e->getMessage());
+        }
     }
 }

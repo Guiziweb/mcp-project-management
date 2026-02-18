@@ -83,6 +83,7 @@ class IssueNormalizer implements DenormalizerInterface, DenormalizerAwareInterfa
             assignee: isset($issue['assigned_to']['name']) ? (string) $issue['assigned_to']['name'] : null,
             type: isset($issue['tracker']['name']) ? (string) $issue['tracker']['name'] : null,
             priority: isset($issue['priority']['name']) ? (string) $issue['priority']['name'] : null,
+            targetVersion: isset($issue['fixed_version']['name']) ? (string) $issue['fixed_version']['name'] : null,
             comments: $comments,
             attachments: $attachments,
             allowedStatuses: $allowedStatuses,

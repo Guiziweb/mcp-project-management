@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Mcp\Infrastructure\Provider\Redmine;
 
-use Psr\Log\LoggerInterface;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\AccessDeniedException;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\InvalidCredentialsException;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\NotFoundException;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Redmine\Client\NativeCurlClient;
+use Redmine\Exception\UnexpectedResponseException;
 use Redmine\Http\HttpFactory;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
@@ -20,7 +24,6 @@ class RedmineClient implements RedmineClientInterface
     public function __construct(
         private readonly string $redmineUrl,
         private readonly string $redmineApiKey,
-        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -33,16 +36,43 @@ class RedmineClient implements RedmineClientInterface
     }
 
     /**
+     * Convert HTTP error responses to specific exceptions.
+     */
+    private function handleUnexpectedResponse(UnexpectedResponseException $e): never
+    {
+        $statusCode = $e->getResponse()?->getStatusCode();
+
+        $this->throwForStatusCode($statusCode, 'Redmine API error: '.$e->getMessage(), $e);
+    }
+
+    /**
+     * Throw appropriate exception based on HTTP status code.
+     */
+    private function throwForStatusCode(?int $statusCode, string $defaultMessage = 'Redmine API error', ?\Throwable $previous = null): never
+    {
+        match ($statusCode) {
+            401 => throw new InvalidCredentialsException(),
+            403 => throw new AccessDeniedException(),
+            404 => throw new NotFoundException(),
+            default => throw new RedmineApiException($defaultMessage, $statusCode ?? 0, $previous),
+        };
+    }
+
+    /**
      * @param array<string, mixed> $params
      *
      * @return array<string, mixed>
      */
     public function getIssues(array $params = []): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('issue');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('issue');
 
-        return $api->list($params);
+            return $api->list($params);
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -56,8 +86,14 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('issue');
+        $result = $api->show($issueId, $params);
 
-        return $api->show($issueId, $params);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 
     /**
@@ -71,8 +107,9 @@ class RedmineClient implements RedmineClientInterface
         $api = $client->getApi('user');
         $result = $api->getCurrentUser();
 
-        if (false === $result || !is_array($result) || !isset($result['user'])) {
-            throw new \RuntimeException('Invalid response from getCurrentUser API');
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
         }
 
         return $result;
@@ -85,10 +122,14 @@ class RedmineClient implements RedmineClientInterface
      */
     public function getMyProjects(): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('project');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('project');
 
-        return $api->list(['membership' => true]);
+            return $api->list(['membership' => true]);
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -98,10 +139,14 @@ class RedmineClient implements RedmineClientInterface
      */
     public function getIssueStatuses(): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('issue_status');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('issue_status');
 
-        return $api->list();
+            return $api->list();
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -125,40 +170,16 @@ class RedmineClient implements RedmineClientInterface
             'activity_id' => $activityId,
         ];
 
-        $this->logger->info('LogTime called', ['data' => $data]);
-
         $client = $this->getClient();
         $api = $client->getApi('time_entry');
+        $api->create($data);
 
-        try {
-            $this->logger->info('Calling Redmine API create()');
-            $result = $api->create($data);
-            $this->logger->info('Redmine API returned', [
-                'type' => gettype($result),
-                'value' => $result instanceof \SimpleXMLElement ? $result->asXML() : $result,
-            ]);
-
-            if ($result instanceof \SimpleXMLElement) {
-                if (isset($result->error) || isset($result->errors)) {
-                    $errors = [];
-                    foreach ($result->error ?? $result->errors->error ?? [] as $error) {
-                        $errors[] = (string) $error;
-                    }
-                    throw new \RuntimeException('Redmine API error: '.implode(', ', $errors));
-                }
-
-                return ['success' => true];
-            }
-
-            if ('' === $result) {
-                return ['success' => true];
-            }
-
-            throw new \RuntimeException('Unexpected response from Redmine API: '.gettype($result));
-        } catch (\Exception $e) {
-            $this->logger->error('Exception during logTime', ['exception' => $e->getMessage()]);
-            throw new \RuntimeException('Failed to create time entry in Redmine: '.$e->getMessage(), 0, $e);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
         }
+
+        return ['success' => true];
     }
 
     /**
@@ -170,10 +191,14 @@ class RedmineClient implements RedmineClientInterface
      */
     public function getTimeEntries(array $params = []): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('time_entry');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('time_entry');
 
-        return $api->all($params);
+            return $api->all($params);
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -185,8 +210,14 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('attachment');
+        $result = $api->show($attachmentId);
 
-        return $api->show($attachmentId);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 
     /**
@@ -198,8 +229,14 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('attachment');
+        $result = $api->download($attachmentId);
 
-        return $api->download($attachmentId);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 
     /**
@@ -239,11 +276,11 @@ class RedmineClient implements RedmineClientInterface
 
         $client = $this->getClient();
         $api = $client->getApi('time_entry');
+        $api->update($timeEntryId, $data);
 
-        $result = $api->update($timeEntryId, $data);
-
-        if (false === $result) {
-            throw new \RuntimeException('Failed to update time entry');
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
         }
     }
 
@@ -256,8 +293,14 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('time_entry');
+        $result = $api->remove($timeEntryId);
 
-        return $api->remove($timeEntryId);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 
     /**
@@ -277,10 +320,11 @@ class RedmineClient implements RedmineClientInterface
             'private_notes' => $private,
         ];
 
-        $result = $api->update($issueId, $params);
+        $api->update($issueId, $params);
 
-        if (false === $result) {
-            throw new \RuntimeException('Failed to add note to issue');
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
         }
     }
 
@@ -292,16 +336,20 @@ class RedmineClient implements RedmineClientInterface
      */
     public function updateJournal(int $journalId, string $notes): void
     {
-        $client = $this->getClient();
+        try {
+            $client = $this->getClient();
 
-        $response = $client->request(HttpFactory::makeJsonRequest(
-            'PUT',
-            '/journals/'.$journalId.'.json',
-            json_encode(['journal' => ['notes' => $notes]]) ?: ''
-        ));
+            $response = $client->request(HttpFactory::makeJsonRequest(
+                'PUT',
+                '/journals/'.$journalId.'.json',
+                json_encode(['journal' => ['notes' => $notes]]) ?: ''
+            ));
 
-        if ($response->getStatusCode() >= 400) {
-            throw new \RuntimeException('Failed to update journal: '.$response->getContent());
+            if ($response->getStatusCode() >= 400) {
+                $this->throwForStatusCode($response->getStatusCode(), 'Failed to update journal: '.$response->getContent());
+            }
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
         }
     }
 
@@ -350,11 +398,11 @@ class RedmineClient implements RedmineClientInterface
 
         $client = $this->getClient();
         $api = $client->getApi('issue');
+        $api->update($issueId, $params);
 
-        $result = $api->update($issueId, $params);
-
-        if (false === $result) {
-            throw new \RuntimeException('Failed to update issue');
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
         }
     }
 
@@ -367,10 +415,14 @@ class RedmineClient implements RedmineClientInterface
      */
     public function getProjectMembers(int $projectId): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('membership');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('membership');
 
-        return $api->listByProject($projectId, ['limit' => 100]);
+            return $api->listByProject($projectId, ['limit' => 100]);
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -384,8 +436,14 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('project');
+        $result = $api->show($projectId, ['include' => ['time_entry_activities']]);
 
-        return $api->show($projectId, ['include' => ['time_entry_activities']]);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 
     /**
@@ -397,10 +455,14 @@ class RedmineClient implements RedmineClientInterface
      */
     public function getWikiPages(int $projectId): array
     {
-        $client = $this->getClient();
-        $api = $client->getApi('wiki');
+        try {
+            $client = $this->getClient();
+            $api = $client->getApi('wiki');
 
-        return $api->listByProject($projectId);
+            return $api->listByProject($projectId);
+        } catch (UnexpectedResponseException $e) {
+            $this->handleUnexpectedResponse($e);
+        }
     }
 
     /**
@@ -415,7 +477,13 @@ class RedmineClient implements RedmineClientInterface
     {
         $client = $this->getClient();
         $api = $client->getApi('wiki');
+        $result = $api->show($projectId, $pageTitle);
 
-        return $api->show($projectId, $pageTitle);
+        $statusCode = $api->getLastResponse()->getStatusCode();
+        if ($statusCode >= 400) {
+            $this->throwForStatusCode($statusCode);
+        }
+
+        return $result;
     }
 }

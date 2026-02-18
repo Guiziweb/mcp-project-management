@@ -6,8 +6,10 @@ namespace App\Mcp\Application\Tool\Redmine;
 
 use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ToolCallException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
@@ -28,13 +30,17 @@ final class DeleteCommentTool implements RedmineTool
         #[Schema(description: 'The comment ID to delete')]
         mixed $comment_id,
     ): array {
-        $comment_id = (int) $comment_id;
-        $adapter = $this->adapterHolder->getRedmine();
-        $adapter->deleteComment($comment_id);
+        try {
+            $comment_id = (int) $comment_id;
+            $adapter = $this->adapterHolder->getRedmine();
+            $adapter->deleteComment($comment_id);
 
-        return [
-            'success' => true,
-            'message' => sprintf('Comment #%d deleted', $comment_id),
-        ];
+            return [
+                'success' => true,
+                'message' => sprintf('Comment #%d deleted', $comment_id),
+            ];
+        } catch (RedmineApiException $e) {
+            throw new ToolCallException($e->getMessage());
+        }
     }
 }

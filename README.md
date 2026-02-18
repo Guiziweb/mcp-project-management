@@ -109,7 +109,7 @@ $user->hasToolEnabled('log_time')
 
 ```bash
 # .env.local
-DATABASE_URL="sqlite:///%kernel.project_dir%/var/data.db"
+DATABASE_URL="sqlite:///%kernel.project_dir%/var/db/data.db"
 ENCRYPTION_KEY=base64-sodium-key
 
 # Google OAuth
@@ -140,11 +140,49 @@ php bin/console app:create-bot \
 ## Local Dev
 
 ```bash
-composer install
+# 1. Copy and configure env
 cp .env.example .env.local
-# Configure .env.local
+# Fill in GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ENCRYPTION_KEY, etc.
 
-symfony server:start --port=8080
+# 2. Start with Docker (port 8090)
+make dev
+```
+
+- Admin panel: http://127.0.0.1:8090/admin
+- MCP endpoint: http://127.0.0.1:8090/mcp
+
+**Important**: use the same host as the OAuth redirect URI configured in Google Cloud Console (e.g. `127.0.0.1`), otherwise session cookies won't persist across the OAuth callback.
+
+### Testing with Claude Code
+
+Add to `~/.claude/mcp_settings.json`:
+```json
+{
+  "mcpServers": {
+    "redmine-local": {
+      "type": "http",
+      "url": "http://127.0.0.1:8090/mcp"
+    }
+  }
+}
+```
+
+On first tool call, Claude Code will open the OAuth flow to authenticate.
+
+### Database (SQLite)
+
+```bash
+# List tables
+docker exec mcp-project-management php bin/console doctrine:query:sql "SELECT name FROM sqlite_master WHERE type='table'"
+
+# List users
+docker exec mcp-project-management php bin/console doctrine:query:sql "SELECT id, email, roles FROM app_user"
+
+# List organizations
+docker exec mcp-project-management php bin/console doctrine:query:sql "SELECT * FROM organization"
+
+# Active MCP sessions
+docker exec mcp-project-management php bin/console doctrine:query:sql "SELECT * FROM mcp_session"
 ```
 
 ## Technical Notes

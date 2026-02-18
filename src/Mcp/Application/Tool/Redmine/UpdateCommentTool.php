@@ -6,8 +6,10 @@ namespace App\Mcp\Application\Tool\Redmine;
 
 use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ToolCallException;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
@@ -30,13 +32,17 @@ final class UpdateCommentTool implements RedmineTool
         #[Schema(description: 'The new comment content')]
         string $comment,
     ): array {
-        $comment_id = (int) $comment_id;
-        $adapter = $this->adapterHolder->getRedmine();
-        $adapter->updateComment($comment_id, $comment);
+        try {
+            $comment_id = (int) $comment_id;
+            $adapter = $this->adapterHolder->getRedmine();
+            $adapter->updateComment($comment_id, $comment);
 
-        return [
-            'success' => true,
-            'message' => sprintf('Comment #%d updated', $comment_id),
-        ];
+            return [
+                'success' => true,
+                'message' => sprintf('Comment #%d updated', $comment_id),
+            ];
+        } catch (RedmineApiException $e) {
+            throw new ToolCallException($e->getMessage());
+        }
     }
 }

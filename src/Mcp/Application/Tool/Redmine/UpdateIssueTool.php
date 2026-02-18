@@ -7,6 +7,7 @@ namespace App\Mcp\Application\Tool\Redmine;
 use App\Mcp\Application\Tool\RedmineTool;
 use App\Mcp\Domain\Model\Status;
 use App\Mcp\Infrastructure\Adapter\AdapterHolder;
+use App\Mcp\Infrastructure\Provider\Redmine\Exception\RedmineApiException;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ToolCallException;
@@ -36,61 +37,65 @@ final class UpdateIssueTool implements RedmineTool
         #[Schema(description: 'User ID to assign the issue to (optional, use provider://projects/{project_id}/members to get valid IDs)')]
         mixed $assigned_to_id = null,
     ): array {
-        // Cast to int for API compatibility (Cursor sends strings)
-        $issue_id = (int) $issue_id;
-        $status_id = null !== $status_id && '' !== $status_id ? (int) $status_id : null;
-        $done_ratio = null !== $done_ratio && '' !== $done_ratio ? (int) $done_ratio : null;
-        $assigned_to_id = null !== $assigned_to_id && '' !== $assigned_to_id ? (int) $assigned_to_id : null;
+        try {
+            // Cast to int for API compatibility (Cursor sends strings)
+            $issue_id = (int) $issue_id;
+            $status_id = null !== $status_id && '' !== $status_id ? (int) $status_id : null;
+            $done_ratio = null !== $done_ratio && '' !== $done_ratio ? (int) $done_ratio : null;
+            $assigned_to_id = null !== $assigned_to_id && '' !== $assigned_to_id ? (int) $assigned_to_id : null;
 
-        $adapter = $this->adapterHolder->getRedmine();
+            $adapter = $this->adapterHolder->getRedmine();
 
-        // Validate status_id format
-        if (null !== $status_id && $status_id <= 0) {
-            throw new ToolCallException('status_id must be a positive integer.');
-        }
-
-        // Validate done_ratio range (0-100)
-        if (null !== $done_ratio && ($done_ratio < 0 || $done_ratio > 100)) {
-            throw new ToolCallException('done_ratio must be between 0 and 100.');
-        }
-
-        // Validate assigned_to_id format
-        if (null !== $assigned_to_id && $assigned_to_id <= 0) {
-            throw new ToolCallException('assigned_to_id must be a positive integer.');
-        }
-
-        // Validate at least one field is provided
-        if (null === $status_id && null === $done_ratio && null === $assigned_to_id) {
-            throw new ToolCallException('At least one field (status_id, done_ratio, assigned_to_id) must be provided to update.');
-        }
-
-        // Fetch issue to validate status_id against allowed transitions
-        $issue = $adapter->getIssue($issue_id);
-
-        // Validate status_id is in allowed_statuses (Redmine workflow)
-        if (null !== $status_id && !empty($issue->allowedStatuses)) {
-            $allowedIds = array_map(fn (Status $s) => $s->id, $issue->allowedStatuses);
-
-            if (!in_array($status_id, $allowedIds, true)) {
-                $allowedList = array_map(
-                    fn (Status $s) => sprintf('%d (%s)', $s->id, $s->name),
-                    $issue->allowedStatuses
-                );
-
-                throw new ToolCallException(sprintf('Status ID %d is not allowed for this issue. Allowed statuses: %s', $status_id, implode(', ', $allowedList)));
+            // Validate status_id format
+            if (null !== $status_id && $status_id <= 0) {
+                throw new ToolCallException('status_id must be a positive integer.');
             }
+
+            // Validate done_ratio range (0-100)
+            if (null !== $done_ratio && ($done_ratio < 0 || $done_ratio > 100)) {
+                throw new ToolCallException('done_ratio must be between 0 and 100.');
+            }
+
+            // Validate assigned_to_id format
+            if (null !== $assigned_to_id && $assigned_to_id <= 0) {
+                throw new ToolCallException('assigned_to_id must be a positive integer.');
+            }
+
+            // Validate at least one field is provided
+            if (null === $status_id && null === $done_ratio && null === $assigned_to_id) {
+                throw new ToolCallException('At least one field (status_id, done_ratio, assigned_to_id) must be provided to update.');
+            }
+
+            // Fetch issue to validate status_id against allowed transitions
+            $issue = $adapter->getIssue($issue_id);
+
+            // Validate status_id is in allowed_statuses (Redmine workflow)
+            if (null !== $status_id && !empty($issue->allowedStatuses)) {
+                $allowedIds = array_map(fn (Status $s) => $s->id, $issue->allowedStatuses);
+
+                if (!in_array($status_id, $allowedIds, true)) {
+                    $allowedList = array_map(
+                        fn (Status $s) => sprintf('%d (%s)', $s->id, $s->name),
+                        $issue->allowedStatuses
+                    );
+
+                    throw new ToolCallException(sprintf('Status ID %d is not allowed for this issue. Allowed statuses: %s', $status_id, implode(', ', $allowedList)));
+                }
+            }
+
+            $adapter->updateIssue(
+                issueId: $issue_id,
+                statusId: $status_id,
+                doneRatio: $done_ratio,
+                assignedToId: $assigned_to_id,
+            );
+
+            return [
+                'success' => true,
+                'message' => sprintf('Issue #%d updated successfully.', $issue_id),
+            ];
+        } catch (RedmineApiException $e) {
+            throw new ToolCallException($e->getMessage());
         }
-
-        $adapter->updateIssue(
-            issueId: $issue_id,
-            statusId: $status_id,
-            doneRatio: $done_ratio,
-            assignedToId: $assigned_to_id,
-        );
-
-        return [
-            'success' => true,
-            'message' => sprintf('Issue #%d updated successfully.', $issue_id),
-        ];
     }
 }

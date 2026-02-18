@@ -46,14 +46,14 @@ RUN APP_ENV=$APP_ENV composer run-script post-install-cmd --no-interaction
 # Copy nginx and supervisor configurations
 COPY docker/nginx/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
+# Create required directories
+RUN mkdir -p var/cache var/log var/db /var/log/supervisor /run/nginx
 
-# Create required directories and set permissions
-RUN mkdir -p var/cache var/log var /var/log/supervisor /run/nginx && \
-    chown -R www-data:www-data /app /var/log/nginx /run/nginx && \
-    chmod -R 775 var/
+RUN php bin/console cache:clear --env=prod && \
+    php bin/console cache:warmup --env=prod
 
-# Set permissions
-RUN chown -R www-data:www-data var/
+RUN chown -R www-data:www-data /app/var /var/log/nginx /run/nginx && \
+    chmod -R 775 /app/var
 
 # Expose port
 EXPOSE 8080
@@ -61,8 +61,7 @@ EXPOSE 8080
 # Set APP_ENV as environment variable for runtime
 ENV APP_ENV=${APP_ENV}
 
-# Start: run migrations, clear cache, then start supervisor (which manages nginx + php-fpm)
+# Start: run migrations, then start supervisor (which manages nginx + php-fpm)
 CMD php bin/console doctrine:migrations:migrate --no-interaction && \
-    php bin/console cache:clear && \
-    chown -R www-data:www-data /app/var && \
+    chown -R www-data:www-data /app/var/db && \
     /usr/bin/supervisord -c /etc/supervisord.conf

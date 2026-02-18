@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/Guiziweb/mcp-project-management/compare/v2.3.0...v2.3.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* create var/db directory before post-install scripts ([b982df0](https://github.com/Guiziweb/mcp-project-management/commit/b982df0bd3dc9e0d540001169354d4384d06039b))
+
 ## [2.3.0](https://github.com/Guiziweb/mcp-project-management/compare/v2.2.0...v2.3.0) (2026-02-18)
 
 
